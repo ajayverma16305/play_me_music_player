@@ -55,13 +55,10 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
     // Binder given to clients
     private val iBinder = LocalBinder()
-    public var mediaPlayer: MediaPlayer? = null
-
-    //path to the audio file
-    private var mediaFile: String? = null
+    var mediaPlayer: MediaPlayer? = null
 
     //Used to pause/resume MediaPlayer
-    public var resumePosition: Int = 0
+    var resumePosition: Int = 0
     private var audioManager: AudioManager? = null
 
     //Handle incoming phone calls
@@ -607,6 +604,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setStyle(android.support.v7.app.NotificationCompat.MediaStyle()
                             .setShowActionsInCompactView(0, 1, 2)
                             .setMediaSession(mediaSession!!.sessionToken))
+
                     .setColor(resources.getColor(R.color.colorPrimary))
                     .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
                     .addAction(notificationAction, "pause", play_pauseAction)
@@ -658,8 +656,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         if (playbackAction == null && playbackAction.action == null) return;
         val actionString = playbackAction.action;
 
-        
-
         when (actionString) {
             (ACTION_PLAY) -> {
                 transportControls!!.play()
@@ -677,7 +673,9 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 transportControls!!.skipToPrevious()
                 updateMainUIOnFromNotificationStatus()
             }
-            (ACTION_STOP) -> { transportControls!!.stop() }
+            (ACTION_STOP) -> {
+                //stopForeground(true)
+                transportControls!!.stop() }
         }
     }
 }
