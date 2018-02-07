@@ -23,6 +23,8 @@ import android.graphics.Bitmap
 import android.os.*
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
+import android.util.Patterns
+import android.webkit.URLUtil
 import android.widget.Toast
 import com.androidteam.playme.HelperModule.PlaybackStatus
 import com.androidteam.playme.R
@@ -256,7 +258,11 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         when (what) {
             MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK -> Log.d("MediaPlayer Error", "MEDIA ERROR NOT VALID FOR PROGRESSIVE PLAYBACK " + extra)
             MediaPlayer.MEDIA_ERROR_SERVER_DIED -> Log.d("MediaPlayer Error", "MEDIA ERROR SERVER DIED " + extra)
-            MediaPlayer.MEDIA_ERROR_UNKNOWN -> Log.d("MediaPlayer Error", "MEDIA ERROR UNKNOWN " + extra)
+            MediaPlayer.MEDIA_ERROR_UNKNOWN -> {
+                Log.d("MediaPlayer Error", "MEDIA ERROR UNKNOWN " + extra)
+                Toast.makeText(applicationContext,"MEDIA ERROR UNKNOWN ",Toast.LENGTH_SHORT).show()
+            }
+
         }
         return false
     }
@@ -628,26 +634,18 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         when (actionNumber) {
             0 -> {
                 // Play
-                playbackAction.action = ACTION_PLAY
-                updateIconOnMainUI(PlaybackStatus.PAUSED)
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             1 -> {
                 // Pause
-                playbackAction.action = ACTION_PAUSE
-                updateIconOnMainUI(PlaybackStatus.PLAYING)
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             2 -> {
                 // Next track
-                playbackAction.action = ACTION_NEXT
-                updateMainUIOnFromNotificationStatus()
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             3 -> {
                 // Previous track
-                playbackAction.action = ACTION_PREVIOUS
-                updateMainUIOnFromNotificationStatus()
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             else -> {
@@ -658,14 +656,26 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
     private fun handleIncomingActions(playbackAction : Intent ) {
         if (playbackAction == null && playbackAction.action == null) return;
-
         val actionString = playbackAction.action;
+
         when (actionString) {
-            (ACTION_PLAY) -> transportControls!!.play()
-            (ACTION_PAUSE) -> transportControls!!.pause()
-            (ACTION_NEXT) -> transportControls!!.skipToNext()
-            (ACTION_PREVIOUS) -> transportControls!!.skipToPrevious()
-            (ACTION_STOP) -> transportControls!!.stop()
+            (ACTION_PLAY) -> {
+                transportControls!!.play()
+                updateIconOnMainUI(PlaybackStatus.PLAYING)
+            }
+            (ACTION_PAUSE) -> {
+                transportControls!!.pause()
+                updateIconOnMainUI(PlaybackStatus.PAUSED)
+            }
+            (ACTION_NEXT) -> {
+                transportControls!!.skipToNext()
+                updateMainUIOnFromNotificationStatus()
+            }
+            (ACTION_PREVIOUS) -> {
+                transportControls!!.skipToPrevious()
+                updateMainUIOnFromNotificationStatus()
+            }
+            (ACTION_STOP) -> { transportControls!!.stop() }
         }
     }
 }

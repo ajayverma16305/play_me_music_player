@@ -25,6 +25,7 @@ import android.os.Handler
 import android.support.v7.widget.LinearLayoutManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.SeekBar
+import android.widget.Toast
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
 import com.androidteam.playme.HelperModule.PlaybackStatus
 import com.androidteam.playme.MusicProvider.MusicContent
@@ -345,28 +346,34 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
+        var isFound = false
+
         if (null != query) {
             for(i in 0 until audioList.size){
                 val musicContent : MusicContent = audioList[i]
                 if(musicContent.title.contentEquals(query)){
+                    isFound = true
                     audioIndex = i;
                     break
                 }
             }
         }
 
-        musicContentObj = audioList[audioIndex]
+        if(!isFound){
+            Toast.makeText(applicationContext,"No result",Toast.LENGTH_SHORT).show()
+        } else {
+            musicContentObj = audioList[audioIndex]
 
-        setCurrentMusicDetailsToUI()
-        playAudio(audioIndex)
-        BottomSheetBehavior.from(bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED)
-        storage?.storeAudioIndex(audioIndex)
+            setCurrentMusicDetailsToUI()
+            playAudio(audioIndex)
+            BottomSheetBehavior.from(bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED)
+            storage?.storeAudioIndex(audioIndex)
 
-        playerService?.activeAudio = musicContentObj
-        playerService?.startPlayingMusic()
+            playerService?.activeAudio = musicContentObj
+            playerService?.startPlayingMusic()
+        }
 
         hideKeyboard()
-
         return false
     }
 
@@ -489,7 +496,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 playButton.setImageResource(R.drawable.pause_main)
                 playButton.tag = "pause"
                 playOnHomeIcon.tag = "pause"
-                playerService?.playMedia()
+                playerService?.startPlayingMusic()
             }
             updateProgressBar()
         }

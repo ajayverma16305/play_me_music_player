@@ -21,18 +21,14 @@ class LaunchScreenActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_launch_screen)
+
+        if(PermissionManager.checkForStoragePermission(this)) {
+            Handler().postDelayed(Runnable {
+                showMainScreen()
+            },200)
+        }
     }
 
-    override fun onStart() {
-        if(UtilityApp.getAppDatabaseValue(this)) {
-            if(PermissionManager.checkForStoragePermission(this)){
-                Handler().postDelayed(Runnable {
-                    showMainScreen()
-                },200)
-            }
-        }
-        super.onStart()
-    }
 
     private fun showMainScreen() {
         startActivity(Intent(this, BaseActivity::class.java))
