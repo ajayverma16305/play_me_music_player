@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#252a31</color>
+    <color name="colorPrimaryDark">#252a31</color>
+
+    <color name="colorAccent">#FF4081</color>
+    <color name="white">#EFEFEF</color>
+
+    <!--<color name="background">#070a0f</color>-->
+    <color name="background">#ffffff</color>
+    <color name="fab">#00bbda</color>
+
+    <color name="ThemeLightColor">#F5BE0E</color>
+    <color name="ThemeBGColor">#FFFFFF</color>
+    <color name="ThemeBGColor2">#EFEFEF</color>
+
+    <color name="TextGreenColor">#50AB54</color>
+    <color name="TextRedColor">#EB483C</color>
+    <color name="TextBlueColor">#007AFF</color>
+    <color name="TextGrayColor">#8E8E93</color>
+
+    <color name="FlatUIMidnightBlueColor">#2C3E50</color>
+    <color name="GoogleDesignDarkGreenColor">#00796B</color>
+
+    <color name="black">#000000</color>
+    <color name="lightGray">#d3d3d3</color>
+
+    <color name="alertColor">#F9F9F9</color>
+    <color name="transparent">#00000000</color>
+    <color name="hintColor">#808080</color>
+    <color name="settingHeaderBackground">#EFEFEF</color>
+
+    <color name="statusBarColor">@color/blue</color>
+    <color name="navigationBarColor">@android:color/black</color>
+    <color name="drawerArrowColor">@android:color/white</color>
+    <color name="blue">#303F9F</color>
+
+    <color name="accent_color">@color/blue</color>
+
+</resources>
