@@ -214,8 +214,16 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             endTimer.text = storage?.loadAudioTotalTime().toString()
         }
 
-        playOnHomeIcon.tag = storage?.loadAudioIconTag()
-        playButton.tag = storage?.loadAudioIconTag()
+        playOnHomeIcon.tag = if (storage?.loadAudioIconTag() == "pause") {
+            null
+        } else {
+            storage?.loadAudioIconTag()
+        }
+        playButton.tag = if (storage?.loadAudioIconTag() == "pause") {
+            null
+        } else {
+            storage?.loadAudioIconTag()
+        }
     }
 
     // Binding this Client to the AudioPlayer Service
@@ -477,26 +485,28 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         if(null != musicPlayer){
             val tag = view.tag
-            if(tag.equals("playing")){
-                playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                playButton.setImageResource(R.drawable.pause)
-                playButton.tag = "pause"
-                playOnHomeIcon.tag = "pause"
-                playerService?.resumeMedia()
-            }
-            else if(tag.equals("pause")){
-                playOnHomeIcon.setImageResource(R.drawable.play_main)
-                playButton.setImageResource(R.drawable.ic_play_white)
-                playButton.tag = "playing"
-                playOnHomeIcon.tag = "playing"
-                playerService?.pauseMedia()
-            }
-            else {
-                playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                playButton.setImageResource(R.drawable.pause_main)
-                playButton.tag = "pause"
-                playOnHomeIcon.tag = "pause"
-                playerService?.startPlayingMusic()
+            when (tag) {
+                "playing" -> {
+                    playOnHomeIcon.setImageResource(R.drawable.pause_main)
+                    playButton.setImageResource(R.drawable.pause)
+                    playButton.tag = "pause"
+                    playOnHomeIcon.tag = "pause"
+                    playerService?.resumeMedia()
+                }
+                "pause" -> {
+                    playOnHomeIcon.setImageResource(R.drawable.play_main)
+                    playButton.setImageResource(R.drawable.ic_play_white)
+                    playButton.tag = "playing"
+                    playOnHomeIcon.tag = "playing"
+                    playerService?.pauseMedia()
+                }
+                else -> {
+                    playOnHomeIcon.setImageResource(R.drawable.pause_main)
+                    playButton.setImageResource(R.drawable.pause_main)
+                    playButton.tag = "pause"
+                    playOnHomeIcon.tag = "pause"
+                    playerService?.startPlayingMusic()
+                }
             }
             updateProgressBar()
         }
@@ -504,32 +514,39 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
     @TargetApi(Build.VERSION_CODES.O)
     private fun detailPlayAction(view: View) {
+        val weakSelf : WeakReference<BaseActivity> = WeakReference<BaseActivity>(this)
+        val self = weakSelf.get()
+
         val musicPlayer = playerService?.mediaPlayer
 
-        if(null != musicPlayer){
-            val tag = view.tag
-            if(tag.equals("playing")){
-                playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                playButton.setImageResource(R.drawable.pause)
-                playButton.tag = "pause"
-                playOnHomeIcon.tag = "pause"
-                playerService?.resumeMedia()
+        if (null != self) {
+            if(null != musicPlayer){
+                val tag = view.tag
+                when (tag) {
+                    "playing" -> {
+                        self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
+                        self.playButton.setImageResource(R.drawable.pause)
+                        self.playButton.tag = "pause"
+                        self.playOnHomeIcon.tag = "pause"
+                        self.playerService?.resumeMedia()
+                    }
+                    "pause" -> {
+                        self.playOnHomeIcon.setImageResource(R.drawable.play_main)
+                        self.playButton.setImageResource(R.drawable.ic_play_white)
+                        self.playButton.tag = "playing"
+                        self.playOnHomeIcon.tag = "playing"
+                        self.playerService?.pauseMedia()
+                    }
+                    else -> {
+                        self.playButton.setImageResource(R.drawable.pause_main)
+                        self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
+                        self.playButton.tag = "pause"
+                        self.playOnHomeIcon.tag = "pause"
+                        self.playerService?.playMedia()
+                    }
+                }
+                updateProgressBar()
             }
-            else if(tag.equals("pause")){
-                playOnHomeIcon.setImageResource(R.drawable.play_main)
-                playButton.setImageResource(R.drawable.ic_play_white)
-                playButton.tag = "playing"
-                playOnHomeIcon.tag = "playing"
-                playerService?.pauseMedia()
-            }
-            else {
-                playButton.setImageResource(R.drawable.pause_main)
-                playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                playButton.tag = "pause"
-                playOnHomeIcon.tag = "pause"
-                playerService?.playMedia()
-            }
-            updateProgressBar()
         }
     }
 
@@ -540,7 +557,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         if (null != self) {
             if(status == (PlaybackStatus.PLAYING)){
                 self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                self.playButton.setImageResource(R.drawable.pause_main)
+                self.playButton.setImageResource(R.drawable.pause)
                 self.playButton.tag = "pause"
                 self.playOnHomeIcon.tag = "pause"
             }
@@ -585,6 +602,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             startTimer.text = (utils.milliSecondsToTimer(currentDuration.toLong()));
 
             // forward or backward to certain seconds
+            playerService?.resumePosition = currentPosition
+
             mediaPlayer.seekTo(currentPosition)
             storage?.storeAudioCurrentSeekPosition(currentDuration)
 

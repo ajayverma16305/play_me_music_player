@@ -36,7 +36,8 @@ import java.util.*
  * Company : CACAO SOLUTIONS
  */
 class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.OnPreparedListener,
-        MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener,
+        MediaPlayer.OnErrorListener, MediaPlayer.OnSeekCompleteListener,
+        MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener,
         AudioManager.OnAudioFocusChangeListener {
 
     private val ACTION_PLAY = "com.androidteam.playme.ACTION_PLAY"
@@ -93,7 +94,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         try {
             //Load data from SharedPreferences
-            storageUtil = StorageUtil(applicationContext)
+            storageUtil = StorageUtil(this)
             if (null != storageUtil!!.loadAudio()) {
                 audioList = storageUtil!!.loadAudio()
                 audioIndex = storageUtil!!.loadAudioIndex()
@@ -591,7 +592,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val notificationChannel = NotificationChannel(CHANNEL_ID,name,importance)
-                //notificationChannel.enableLights(true);
+               // notificationChannel.enableLights(true);
                 notificationManager.createNotificationChannel(mChannel);
             }
 
@@ -618,7 +619,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
             notificationManager.notify(NOTIFICATION_ID, notification.build())
 
         } catch (e: Exception) {
-            Log.d("NotificationError",e.message)
+            Timber.d(e.message)
         }
     }
 
@@ -632,18 +633,22 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         when (actionNumber) {
             0 -> {
                 // Play
+                playbackAction.action = (ACTION_PLAY)
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             1 -> {
                 // Pause
+                playbackAction.action = (ACTION_PAUSE)
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             2 -> {
                 // Next track
+                playbackAction.action = (ACTION_NEXT)
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             3 -> {
                 // Previous track
+                playbackAction.action = (ACTION_PREVIOUS)
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             else -> {
@@ -657,23 +662,23 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         val actionString = playbackAction.action;
 
         when (actionString) {
-            (ACTION_PLAY) -> {
+            (ACTION_PLAY) ->  /*transportControls!!.play()*/ {
                 transportControls!!.play()
                 updateIconOnMainUI(PlaybackStatus.PLAYING)
             }
-            (ACTION_PAUSE) -> {
+            (ACTION_PAUSE) ->  /*transportControls!!.pause()*/ {
                 transportControls!!.pause()
                 updateIconOnMainUI(PlaybackStatus.PAUSED)
             }
-            (ACTION_NEXT) -> {
+            (ACTION_NEXT) ->   /*transportControls!!.skipToNext()*/ {
                 transportControls!!.skipToNext()
                 updateMainUIOnFromNotificationStatus()
             }
-            (ACTION_PREVIOUS) -> {
+            (ACTION_PREVIOUS) -> /*transportControls!!.skipToPrevious()*/ {
                 transportControls!!.skipToPrevious()
                 updateMainUIOnFromNotificationStatus()
             }
-            (ACTION_STOP) -> {
+            (ACTION_STOP) ->  /*transportControls!!.stop()*/ {
                 //stopForeground(true)
                 transportControls!!.stop() }
         }
