@@ -658,6 +658,8 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         if (playbackAction == null && playbackAction.action == null) return;
         val actionString = playbackAction.action;
 
+        
+
         when (actionString) {
             (ACTION_PLAY) -> {
                 transportControls!!.play()
