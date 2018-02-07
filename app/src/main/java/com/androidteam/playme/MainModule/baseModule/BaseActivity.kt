@@ -6,9 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import android.support.annotation.RequiresApi
 import android.support.v7.app.AppCompatActivity
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
 import com.androidteam.playme.HelperModule.UtilityApp
 import com.androidteam.playme.Listeners.OnAudioPickedListener
 import com.androidteam.playme.R
@@ -23,8 +20,11 @@ import android.content.ServiceConnection
 import android.content.res.ColorStateList
 import android.os.Handler
 import android.support.v7.widget.LinearLayoutManager
+import android.view.*
 import android.view.inputmethod.InputMethodManager
+import android.widget.RelativeLayout
 import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
 import com.androidteam.playme.HelperModule.PlaybackStatus
@@ -73,16 +73,37 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         // Audio List
         audioList = MusicContentProvider.getAllMusicPathList(this@BaseActivity)
-        Collections.sort(audioList) { lhs, rhs -> lhs.title.compareTo(rhs.title) }
+        if (audioList.size > 0) {
+            music_recycler_view.visibility = View.VISIBLE
+            card_view.visibility = View.VISIBLE
 
-        //Store Serializable audioList to SharedPreferences
-        storage?.storeAudio(audioList)
+            Collections.sort(audioList) { lhs, rhs -> lhs.title.compareTo(rhs.title) }
 
-        initUIComponents()
-        setBottomSheetDrawerView()
+            //Store Serializable audioList to SharedPreferences
+            storage?.storeAudio(audioList)
 
-        startMediaService()
-        setInitialStateOnViews()
+            initUIComponents()
+            setBottomSheetDrawerView()
+
+            startMediaService()
+            setInitialStateOnViews()
+        }
+        else {
+            music_recycler_view.visibility = View.GONE
+            card_view.visibility = View.GONE
+
+            val relative = RelativeLayout(this)
+
+            val errorTextView = TextView(this)
+            val layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT)
+            errorTextView.layoutParams = layoutParams
+            errorTextView.text = "No Song Available"
+            errorTextView.textSize = 24f
+            errorTextView.gravity = Gravity.CENTER
+
+            relative.addView(errorTextView)
+            main_content.addView(relative)
+        }
     }
 
     /**
@@ -481,34 +502,45 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
     @TargetApi(Build.VERSION_CODES.O)
     private fun playHomeIconAction(view: View) {
+        val weakSelf : WeakReference<BaseActivity> = WeakReference<BaseActivity>(this)
+        val self = weakSelf.get()
+
         val musicPlayer = playerService?.mediaPlayer
 
-        if(null != musicPlayer){
-            val tag = view.tag
-            when (tag) {
-                "playing" -> {
-                    playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                    playButton.setImageResource(R.drawable.pause)
-                    playButton.tag = "pause"
-                    playOnHomeIcon.tag = "pause"
-                    playerService?.resumeMedia()
+        if (null != self) {
+            if(null != musicPlayer){
+                val tag = view.tag
+                when (tag) {
+                    "playing" -> {
+                        self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
+                        self.playButton.setImageResource(R.drawable.pause)
+                        self.playButton.tag = "pause"
+                        self.playOnHomeIcon.tag = "pause"
+                        self.playerService?.resumeMedia()
+                    }
+                    "pause" -> {
+                        self.playOnHomeIcon.setImageResource(R.drawable.play_main)
+                        self.playButton.setImageResource(R.drawable.ic_play_white)
+                        self.playButton.tag = "playing"
+                        self.playOnHomeIcon.tag = "playing"
+                        self.playerService?.pauseMedia()
+                    }
+                    else -> {
+                        self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
+                        self.playButton.setImageResource(R.drawable.pause)
+                        self.playButton.tag = "pause"
+                        self.playOnHomeIcon.tag = "pause"
+
+                        if(storage?.loadAudioSeekPosition() != 0){
+                            self.playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
+                            self.playerService?.resumeMedia()
+                        } else {
+                            self.playerService?.startPlayingMusic()
+                        }
+                    }
                 }
-                "pause" -> {
-                    playOnHomeIcon.setImageResource(R.drawable.play_main)
-                    playButton.setImageResource(R.drawable.ic_play_white)
-                    playButton.tag = "playing"
-                    playOnHomeIcon.tag = "playing"
-                    playerService?.pauseMedia()
-                }
-                else -> {
-                    playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                    playButton.setImageResource(R.drawable.pause_main)
-                    playButton.tag = "pause"
-                    playOnHomeIcon.tag = "pause"
-                    playerService?.startPlayingMusic()
-                }
+                updateProgressBar()
             }
-            updateProgressBar()
         }
     }
 
@@ -539,10 +571,16 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     }
                     else -> {
                         self.playButton.setImageResource(R.drawable.pause_main)
-                        self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
+                        self.playOnHomeIcon.setImageResource(R.drawable.pause)
                         self.playButton.tag = "pause"
                         self.playOnHomeIcon.tag = "pause"
-                        self.playerService?.playMedia()
+
+                        if(storage?.loadAudioSeekPosition() != 0){
+                            self.playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
+                            self.playerService?.resumeMedia()
+                        } else {
+                            self.playerService?.startPlayingMusic()
+                        }
                     }
                 }
                 updateProgressBar()
@@ -637,6 +675,17 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             UtilityApp.startTapTargetViewForPlayIcon(this, playOnHomeIcon, toolbar, R.id.action_search)
         }
         super.onResume()
+    }
+
+    override fun onPause() {
+        val mediaPlayer = playerService?.mediaPlayer
+        if (null != mediaPlayer) {
+            storage?.storeAudioIndex(audioIndex)
+            storage?.storeAudioCurrentSeekPosition(mediaPlayer.currentPosition)
+            storage?.storeAudioProgress(frontSeekBar.progress)
+            storage?.storeAudioCurrentTime(startTimer.text.toString())
+        }
+        super.onPause()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
