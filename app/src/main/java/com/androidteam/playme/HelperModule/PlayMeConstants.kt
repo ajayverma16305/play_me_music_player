@@ -6,6 +6,7 @@ package com.androidteam.playme.HelperModule
  */
 class PlayMeConstants {
     companion object {
+        val BROAD_CAST_PLAY_NEW_AUDIO = "com.androidteam.playme.PlayNewAudio"
         val MEDIA_ACCESS_REQUEST_CODE = 1
         val USER_DEFAULT_KEY_STORE = "PlayMe"
         val PLAY_MUSIC_STR = "Play Music"

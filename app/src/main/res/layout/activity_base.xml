@@ -51,13 +51,6 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"/>
 
-        <ProgressBar
-            android:visibility="gone"
-            android:id="@+id/loader"
-            android:layout_centerInParent="true"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
     </RelativeLayout>
 
     <RelativeLayout

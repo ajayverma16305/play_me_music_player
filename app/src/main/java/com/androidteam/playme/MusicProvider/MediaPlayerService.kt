@@ -27,6 +27,7 @@ import android.support.v4.media.MediaDescriptionCompat
 import android.util.Patterns
 import android.webkit.URLUtil
 import android.widget.Toast
+import com.androidteam.playme.HelperModule.PlayMeConstants
 import com.androidteam.playme.HelperModule.PlaybackStatus
 import com.androidteam.playme.R
 import timber.log.Timber
@@ -320,7 +321,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     private val playNewAudio = object : BroadcastReceiver() {
         @TargetApi(Build.VERSION_CODES.O)
         override fun onReceive(context: Context, intent: Intent) {
-
             //Get the new media index form SharedPreferences
             audioIndex = storageUtil!!.loadAudioIndex()
 
@@ -345,7 +345,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     private fun registerPlayNewAudio() {
         //Register playNewMedia receiver
         //Get the new media index form SharedPreferences
-        val filter = IntentFilter(BaseActivity.BROAD_CAST_PLAY_NEW_AUDIO)
+        val filter = IntentFilter(PlayMeConstants.BROAD_CAST_PLAY_NEW_AUDIO)
         registerReceiver(playNewAudio, filter)
     }
 
@@ -356,7 +356,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
         mediaSessionManager = getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
         // Create a new MediaSession
-        mediaSession = MediaSessionCompat(applicationContext, "AudioPlayer")
+        mediaSession = MediaSessionCompat(applicationContext, "PlayMeAudioPlayer")
         //Get MediaSessions transport controls
         transportControls = mediaSession!!.controller.transportControls
         //set MediaSession -> ready to receive media commands

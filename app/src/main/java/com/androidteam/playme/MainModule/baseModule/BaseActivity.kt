@@ -24,7 +24,7 @@ import com.androidteam.playme.HelperModule.*
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.MusicProvider.MediaPlayerService
-import com.androidteam.playme.MusicProvider.MusicContentProvider
+import com.androidteam.playme.SplashModule.LaunchScreenActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.GlideDrawable
 import com.bumptech.glide.request.RequestListener
@@ -39,7 +39,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         SeekBar.OnSeekBarChangeListener, MediaPlayerService.OnAudioChangedListener,
         MusicAdapter.OnShuffleIconClickListener, MediaPlayerService.OnNotificationChangeListener {
 
-    private lateinit var sheetBehavior : BottomSheetBehavior<*>
+    private lateinit var sheetBehavior: BottomSheetBehavior<*>
     private var playerService: MediaPlayerService? = null
     private var serviceBound = false
 
@@ -47,17 +47,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
     private var audioList = ArrayList<MusicContent>()
     private var audioIndex = 0
     private var musicContentObj: MusicContent? = null
-    private var mHandler : Handler = Handler()
-    private var storage : StorageUtil? = null
-    private val utils : TimeUtilities = TimeUtilities()
-    private var weakSelf : WeakReference<BaseActivity> = WeakReference(this)
-    private interface OnAudioResourcesListReadyListener {
-        fun resourcesList(musicContentList: ArrayList<MusicContent>)
-    }
-
-    companion object {
-        val BROAD_CAST_PLAY_NEW_AUDIO = "com.androidteam.playme.PlayNewAudio"
-    }
+    private var mHandler: Handler = Handler()
+    private var storage: StorageUtil? = null
+    private val utils: TimeUtilities = TimeUtilities()
+    private var weakSelf: WeakReference<BaseActivity> = WeakReference(this)
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,50 +61,33 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
 
         val self = weakSelf.get()
         if (null != self) {
-            self.loader.visibility = View.VISIBLE
             self.music_recycler_view.visibility = View.GONE
             self.card_view.visibility = View.GONE
         }
         initializeRecyclerView()
 
-        val musicAsyncObj = AudioRetrieverAsync(WeakReference(applicationContext),object : OnAudioResourcesListReadyListener {
-            override fun resourcesList(musicContentList: ArrayList<MusicContent>) {
-                if (null != self) {
-                    self.loader.visibility = View.GONE
-                }
+        object : LaunchScreenActivity.OnAudioQueringTaskCompletedListener{
+            override fun onTaskCompleted(audioList: ArrayList<MusicContent>?) {
+                if (null != audioList) {
+                    this@BaseActivity.audioList = audioList
 
-                audioList = musicContentList
-                if(audioList.size > 0){
-                    if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
-                        UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
+                    if (audioList.size > 0) {
+                        startFetchingAudioFilesFromStorage()
+                    } else {
+                        setErrorViewForNoAudio()
                     }
-
-                    startFetchingAudioFilesFromStorage()
                 } else {
                     setErrorViewForNoAudio()
                 }
             }
-        })
-        musicAsyncObj.execute()
+        }
     }
 
-    /**
-     * Async class to get all music list from Storage
-     */
-    private class AudioRetrieverAsync(val selfWeak : WeakReference<Context>, private var audioResourceReadyListener
-                            : OnAudioResourcesListReadyListener) : AsyncTask<Void, Void, ArrayList<MusicContent>>() {
-
-        override fun doInBackground(vararg p0: Void?): ArrayList<MusicContent> {
-            return MusicContentProvider.getAllMusicPathList(selfWeak.get()!!)
+    override fun onResume() {
+        if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
+            UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
         }
-
-        override fun onPostExecute(result: ArrayList<MusicContent>?) {
-            if(null != result){
-                if(result.size > 0) {
-                    audioResourceReadyListener.resourcesList(result)
-                }
-            }
-        }
+        super.onResume()
     }
 
     // Start Fetching Audio Files From Storage
@@ -140,12 +116,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         if (null != self) {
             self.music_recycler_view.visibility = View.GONE
             self.card_view.visibility = View.GONE
-            self.loader.visibility = View.GONE
             self.errorView.visibility = View.VISIBLE
         }
     }
 
-    private fun initializeRecyclerView(){
+    private fun initializeRecyclerView() {
         music_recycler_view.layoutManager = LinearLayoutManager(this) as LinearLayoutManager
 
         /**
@@ -162,14 +137,14 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
     private fun initUIComponents() {
         val self = weakSelf.get()
 
-        if(null != self) {
+        if (null != self) {
             self.artistName.isSelected = true
             self.playingSongName.isSelected = true
             self.closeArtistName.isSelected = true
             self.closeSongName.isSelected = true
         }
 
-        val musicAdapter = MusicAdapter(this,audioList)
+        val musicAdapter = MusicAdapter(this, audioList)
         music_recycler_view.adapter = musicAdapter
         musicAdapter.setSongClickedListener(this)
         musicAdapter.setOnShuffleIconClickListener(this)
@@ -188,11 +163,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         search_view.setOnQueryTextListener(this)
         search_view.setOnSearchViewListener(this)
         search_view.setHint(getString(R.string.action_search))
-        search_view.setSuggestionIcon(ContextCompat.getDrawable(applicationContext,R.drawable.ic_music_note_black_24dp))
+        search_view.setSuggestionIcon(ContextCompat.getDrawable(applicationContext, R.drawable.ic_music_note_black_24dp))
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    override fun shuffleAction(view : View) {
+    override fun shuffleAction(view: View) {
         view.isEnabled = false
 
         audioIndex = playerService?.getRandomAudioFileIndex()!!
@@ -203,7 +178,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
 
         Handler().postDelayed({
             view.isEnabled = true
-        },250)
+        }, 250)
     }
 
     private fun setBottomSheetDrawerView() {
@@ -246,16 +221,16 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
     }
 
     // Set initial state on views
-    private fun setInitialStateOnViews(){
+    private fun setInitialStateOnViews() {
         val self = weakSelf.get()
         if (null != self) {
-            if(storage?.loadAudioShuffledState()!!){
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext,R.color.colorPrimary))
+            if (storage?.loadAudioShuffledState()!!) {
+                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
             } else {
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext,R.color.lightGray))
+                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.lightGray))
             }
 
-            if(storage?.loadAudioIsRepeatOne()!!){
+            if (storage?.loadAudioIsRepeatOne()!!) {
                 self.repeatIcon.setImageResource(R.drawable.repeat_one)
             } else {
                 self.repeatIcon.setImageResource(R.drawable.infinite_loop)
@@ -285,8 +260,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
                     .error(R.drawable.playme_app_logo)
-                    .override(60,60)
-                    .listener(object : RequestListener<String, GlideDrawable>{
+                    .override(60, 60)
+                    .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
                             self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
                             return true
@@ -301,8 +276,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
                     .error(R.drawable.placeholder)
-                    .override(300,300)
-                    .listener(object : RequestListener<String, GlideDrawable>{
+                    .override(300, 300)
+                    .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
                             self.albumImageView.setImageResource(R.drawable.placeholder)
                             return true
@@ -351,7 +326,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
     }
 
-    override fun updateUI(activeAudio : MusicContent) {
+    override fun updateUI(activeAudio: MusicContent) {
         musicContentObj = activeAudio
         setCurrentMusicDetailsToUI()
     }
@@ -360,7 +335,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         updateOnScreenIcons(status)
     }
 
-    override fun audioPicked(activeMusic : MusicContent, position: Int) {
+    override fun audioPicked(activeMusic: MusicContent, position: Int) {
         musicContentObj = activeMusic
 
         setCurrentMusicDetailsToUI()
@@ -378,8 +353,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
                     .error(R.drawable.playme_app_logo)
-                    .override(60,60)
-                    .listener(object : RequestListener<String, GlideDrawable>{
+                    .override(60, 60)
+                    .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
                             self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
                             return true
@@ -409,8 +384,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
                     .error(R.drawable.placeholder)
-                    .override(300,300)
-                    .listener(object : RequestListener<String, GlideDrawable>{
+                    .override(300, 300)
+                    .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
                             self.albumImageView.setImageResource(R.drawable.placeholder)
                             return true
@@ -427,7 +402,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
     }
 
-    private fun playAudio(position : Int) {
+    private fun playAudio(position: Int) {
         audioIndex = position
 
         //Store Serializable audioList to SharedPreferences
@@ -437,11 +412,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         //Check is service is active
         if (!serviceBound) {
             BottomSheetBehavior.from(bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED);
-        }
-        else {
+        } else {
             //Service is active
             //Send a broadcast to the service -> PLAY_NEW_AUDIO
-            val broadcastIntent = Intent(BROAD_CAST_PLAY_NEW_AUDIO)
+            val broadcastIntent = Intent(PlayMeConstants.BROAD_CAST_PLAY_NEW_AUDIO)
             sendBroadcast(broadcastIntent)
         }
     }
@@ -485,9 +459,9 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
 
         var isFound = false
         if (null != query) {
-            for(i in 0 until audioList.size){
-                val musicContent : MusicContent = audioList[i]
-                if(musicContent.title.contentEquals(query)){
+            for (i in 0 until audioList.size) {
+                val musicContent: MusicContent = audioList[i]
+                if (musicContent.title.contentEquals(query)) {
                     isFound = true
                     audioIndex = i;
                     break
@@ -495,15 +469,15 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             }
         }
 
-        if(!isFound){
-            Toast.makeText(applicationContext,"No result",Toast.LENGTH_SHORT).show()
+        if (!isFound) {
+            Toast.makeText(applicationContext, "No result", Toast.LENGTH_SHORT).show()
         } else {
             musicContentObj = audioList[audioIndex]
 
             setCurrentMusicDetailsToUI()
             playAudio(audioIndex)
 
-            if(null != self) {
+            if (null != self) {
                 BottomSheetBehavior.from(self.bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED)
                 self.storage?.storeAudioIndex(audioIndex)
                 self.playerService?.activeAudio = musicContentObj
@@ -515,7 +489,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         return false
     }
 
-    private fun hideKeyboard(){
+    private fun hideKeyboard() {
         val imm = applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(this.window.decorView.windowToken, 0)
     }
@@ -530,9 +504,9 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
     override fun onSearchViewShown() {
         val self = weakSelf.get()
 
-        val audioNameList : ArrayList<String> = arrayListOf()
-        for(i in 0 until audioList.size){
-            val musicContent : MusicContent = audioList[i]
+        val audioNameList: ArrayList<String> = arrayListOf()
+        for (i in 0 until audioList.size) {
+            val musicContent: MusicContent = audioList[i]
             audioNameList.add(musicContent.title)
         }
 
@@ -550,7 +524,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    override fun onClick(view : View?) {
+    override fun onClick(view: View?) {
         when (view?.id) {
             R.id.playButton -> {
                 detailPlayAction(view)
@@ -558,33 +532,33 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             R.id.closeAction -> {
                 closeAction()
             }
-            R.id.playLayout ->{
+            R.id.playLayout -> {
                 BottomSheetBehavior.from(bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED);
             }
-            R.id.playOnHomeIcon ->{
+            R.id.playOnHomeIcon -> {
                 playHomeIconAction(view)
             }
-            R.id.nextIcon ->{
+            R.id.nextIcon -> {
                 nextIconAction()
             }
-            R.id.previousIcon ->{
+            R.id.previousIcon -> {
                 previousIconAction()
             }
-            R.id.repeatIcon ->{
+            R.id.repeatIcon -> {
                 repeatAllIconAction()
             }
-            R.id.shuffle ->{
+            R.id.shuffle -> {
                 shuffleIconAction()
             }
         }
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    private fun repeatAllIconAction(){
+    private fun repeatAllIconAction() {
         val self = weakSelf.get()
 
         if (null != self) {
-            if(!self.storage?.loadAudioIsRepeatOne()!!){
+            if (!self.storage?.loadAudioIsRepeatOne()!!) {
                 self.storage?.storeAudioRepeatOne(true)
                 self.repeatIcon.setImageResource(R.drawable.repeat_one)
             } else {
@@ -601,10 +575,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         if (null != self) {
             if (self.storage?.loadAudioShuffledState()!!) {
                 self.storage?.storeAudioShuffle(false)
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext,R.color.hintColor))
+                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.hintColor))
             } else {
                 self.storage?.storeAudioShuffle(true)
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext,R.color.colorPrimary))
+                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
             }
         }
     }
@@ -641,7 +615,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         val self = weakSelf.get()
         if (null != self) {
             val musicPlayer = self.playerService?.mediaPlayer
-            if(null != musicPlayer){
+            if (null != musicPlayer) {
                 val tag = view.tag
                 when (tag) {
                     PlayMeConstants.PLAYING -> {
@@ -668,7 +642,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.storage?.storeAvailable(false)
                         self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
 
-                        if(storage?.loadAudioSeekPosition() != 0){
+                        if (storage?.loadAudioSeekPosition() != 0) {
                             self.playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
                             self.playerService?.resumeMediaPlayerWhereUserLeft()
                         } else {
@@ -686,8 +660,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         val self = weakSelf.get()
 
         if (null != self) {
-            val musicPlayer =  self.playerService?.mediaPlayer
-            if(null != musicPlayer){
+            val musicPlayer = self.playerService?.mediaPlayer
+            if (null != musicPlayer) {
                 val tag = view.tag
                 when (tag) {
                     PlayMeConstants.PLAYING -> {
@@ -714,7 +688,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.storage?.storeAvailable(false)
                         self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
 
-                        if(storage?.loadAudioSeekPosition() != 0){
+                        if (storage?.loadAudioSeekPosition() != 0) {
                             self.playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
                             self.playerService?.resumeMediaPlayerWhereUserLeft()
                         } else {
@@ -727,17 +701,16 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
     }
 
-    private fun updateOnScreenIcons(status: PlaybackStatus){
+    private fun updateOnScreenIcons(status: PlaybackStatus) {
         val self = weakSelf.get()
 
         if (null != self) {
-            if(status == (PlaybackStatus.PLAYING)){
+            if (status == (PlaybackStatus.PLAYING)) {
                 self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
                 self.playButton.setImageResource(R.drawable.pause)
                 self.playButton.tag = PlayMeConstants.PAUSE
                 self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-            }
-            else {
+            } else {
                 self.playOnHomeIcon.setImageResource(R.drawable.play_main)
                 self.playButton.setImageResource(R.drawable.ic_play_white)
                 self.playButton.tag = PlayMeConstants.PLAYING
@@ -847,7 +820,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             if (self.search_view.isSearchOpen) {
                 self.search_view.closeSearch()
             } else {
-                if(BottomSheetBehavior.from(self.bottomSheet).state == (BottomSheetBehavior.STATE_EXPANDED)){
+                if (BottomSheetBehavior.from(self.bottomSheet).state == (BottomSheetBehavior.STATE_EXPANDED)) {
                     BottomSheetBehavior.from(self.bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED;
                 } else {
                     super.onBackPressed()
