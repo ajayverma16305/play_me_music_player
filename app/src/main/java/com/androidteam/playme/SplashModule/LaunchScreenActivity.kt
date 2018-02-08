@@ -27,12 +27,8 @@ class LaunchScreenActivity : AppCompatActivity() {
         fun resourcesList(musicContentList: ArrayList<MusicContent>?)
     }
 
-    interface OnAudioQueringTaskCompletedListener{
-        fun onTaskCompleted(audioList : ArrayList<MusicContent>?)
-    }
-
     companion object {
-        val onAudioQuereingCompleteListener : OnAudioQueringTaskCompletedListener? = null
+        var audioList = ArrayList<MusicContent>()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,10 +79,10 @@ class LaunchScreenActivity : AppCompatActivity() {
      * Show Main Screen
      */
     private fun showMainScreen(musicContentList: ArrayList<MusicContent>?) {
-        startActivity(Intent(this, BaseActivity::class.java))
-        if(null != onAudioQuereingCompleteListener){
-            onAudioQuereingCompleteListener.onTaskCompleted(musicContentList)
+        if (null != musicContentList) {
+            audioList = musicContentList
         }
+        startActivity(Intent(this, BaseActivity::class.java))
         finish()
     }
 

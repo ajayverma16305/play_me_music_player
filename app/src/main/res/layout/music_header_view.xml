@@ -13,10 +13,11 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="18dp"
+        android:padding="16dp"
         android:background="@color/ThemeBGColor2"
         android:textColor="@color/colorPrimary"
         android:paddingStart="16dp"
+        android:textAllCaps="true"
         android:text="All Songs" />
 
     <TextView
@@ -26,10 +27,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="end"
-        android:padding="18dp"
+        android:padding="16dp"
+        android:textAllCaps="true"
         android:drawableTint="@color/colorPrimary"
         android:drawableStart="@drawable/ic_shuffle_black_24dp"
         android:background="@color/ThemeBGColor2"
         android:textColor="@color/colorPrimary"
-        android:text="Shuffle " />
+        android:text="Shuffle All" />
 </LinearLayout>

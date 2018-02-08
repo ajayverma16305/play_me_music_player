@@ -66,20 +66,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
         initializeRecyclerView()
 
-        object : LaunchScreenActivity.OnAudioQueringTaskCompletedListener{
-            override fun onTaskCompleted(audioList: ArrayList<MusicContent>?) {
-                if (null != audioList) {
-                    this@BaseActivity.audioList = audioList
-
-                    if (audioList.size > 0) {
-                        startFetchingAudioFilesFromStorage()
-                    } else {
-                        setErrorViewForNoAudio()
-                    }
-                } else {
-                    setErrorViewForNoAudio()
-                }
-            }
+        audioList = LaunchScreenActivity.audioList
+        if (audioList.size > 0) {
+            startFetchingAudioFilesFromStorage()
+        } else {
+            setErrorViewForNoAudio()
         }
     }
 
@@ -173,8 +164,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         audioIndex = playerService?.getRandomAudioFileIndex()!!
         musicContentObj = audioList[audioIndex]
 
+        playerService?.activeAudio = musicContentObj
         playerService?.startPlayingMusic()
         setCurrentMusicDetailsToUI()
+
+        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
 
         Handler().postDelayed({
             view.isEnabled = true
@@ -470,7 +464,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
 
         if (!isFound) {
-            Toast.makeText(applicationContext, "No result", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "No Such Song Available", Toast.LENGTH_SHORT).show()
         } else {
             musicContentObj = audioList[audioIndex]
 

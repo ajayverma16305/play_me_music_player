@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.Listeners.OnAudioPickedListener
@@ -22,7 +23,7 @@ import timber.log.Timber
  * Created by AJAY VERMA on 24/04/15.
  * Company : CACAO SOLUTIONS
  */
-class MusicAdapter(var context : Context,private var songsList: List<MusicContent>) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+class MusicAdapter(val context : Context,private val songsList: List<MusicContent>) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
         SectionTitleProvider{
 
     private var audioPickedListener: OnAudioPickedListener? = null
@@ -64,7 +65,6 @@ class MusicAdapter(var context : Context,private var songsList: List<MusicConten
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder.itemViewType == TYPE_ITEM) {
             val songObject = songsList[position - 1]
-
             val itemHolder = holder as ItemHolder
 
             Glide.with(context)
@@ -112,7 +112,7 @@ class MusicAdapter(var context : Context,private var songsList: List<MusicConten
         val mTitleView : TextView = mView.findViewById(R.id.title)
         val mArtistView : TextView = mView.findViewById(R.id.artist)
         val mDurationView : TextView = mView.findViewById(R.id.duration)
-        val cardView : CardView = mView.findViewById(R.id.card_view)
+        val cardView : LinearLayout = mView.findViewById(R.id.card_view)
     }
 
     override fun getItemViewType(position: Int): Int {

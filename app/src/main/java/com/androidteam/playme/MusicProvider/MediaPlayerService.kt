@@ -206,10 +206,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         }
     }
 
-    fun isPlaying() : Boolean {
-        return mediaPlayer!!.isPlaying
-    }
-
     override fun onBind(intent: Intent): IBinder? {
         return iBinder
     }
@@ -249,14 +245,15 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
             }
             else {
                 activeAudio = audioList[getRandomAudioFileIndex()]
-                stopMedia()
 
+                stopMedia()
                 //reset mediaPlayer
                 mediaPlayer!!.reset()
-                initMediaPlayer()
+                //initMediaPlayer()
                 startPlayingMusic()
             }
         }
+        updateMainUIOnFromNotificationStatus()
     }
 
     fun getRandomAudioFileIndex() : Int {
@@ -285,7 +282,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 Log.d("MediaPlayer Error", "MEDIA ERROR UNKNOWN " + extra)
                 Toast.makeText(applicationContext,"MEDIA ERROR UNKNOWN ",Toast.LENGTH_SHORT).show()
             }
-
         }
         return false
     }
@@ -634,7 +630,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                             .setShowCancelButton(true)
                             .setCancelButtonIntent(playbackAction(4)))
 
-                    .setColor(resources.getColor(R.color.colorPrimary))
+                    .setColor(resources.getColor(R.color.background))
                     .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
                     .addAction(notificationAction, "pause", play_pauseAction)
                     .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2))
@@ -643,6 +639,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setOngoing(true)
                     .setOnlyAlertOnce(true)
                     .setWhen(0)
+                    .setSound(null)
 
             val contentIntent = PendingIntent.getActivity(this, 0,
                     Intent(this, BaseActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT);
@@ -721,7 +718,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
             }
             (ACTION_STOP) ->  {
-                stopForeground(true)
+                removeNotification()
                 transportControls!!.stop() }
         }
     }
