@@ -1,9 +1,6 @@
 package com.androidteam.playme.MainModule.adapter
 
 import android.content.Context
-import android.graphics.drawable.Drawable
-import android.net.Uri
-import android.support.v4.content.ContextCompat
 import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
@@ -14,14 +11,11 @@ import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.Listeners.OnAudioPickedListener
 import com.androidteam.playme.R
 import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestBuilder
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.resource.drawable.GlideDrawable
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.futuremind.recyclerviewfastscroll.SectionTitleProvider
 import de.hdodenhof.circleimageview.CircleImageView
-import kotlinx.android.synthetic.main.persistent_bottomsheet.*
 import timber.log.Timber
 
 /**
@@ -72,21 +66,22 @@ class MusicAdapter(var context : Context,private var songsList: List<MusicConten
             val songObject = songsList[position - 1]
 
             val itemHolder = holder as ItemHolder
+
             Glide.with(context)
                     .load(songObject.cover)
-                    .listener(object  : RequestListener<Drawable> {
-
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                            itemHolder.mCoverView.setImageResource(R.drawable.ic_music_note_black_24dp)
+                    .error(R.drawable.playme_app_logo)
+                    .override(60,60)
+                    .listener(object : RequestListener<String, GlideDrawable>{
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
                             return true
                         }
 
-                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
                             Timber.d("Resource Ready")
                             return false
                         }
-                    })
-                    .into(itemHolder.mCoverView)
+                    }).into(itemHolder.mCoverView)
 
             itemHolder.mTitleView.text = songObject.title
             itemHolder.mArtistView.text = songObject.artist

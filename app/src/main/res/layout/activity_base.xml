@@ -32,6 +32,7 @@
     </FrameLayout>
 
     <RelativeLayout
+        android:id="@+id/mainRootView"
         android:layout_below="@+id/toolbar_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -43,7 +44,7 @@
 
         <com.futuremind.recyclerviewfastscroll.FastScroller
             android:id="@+id/fastscroll"
-            android:layout_marginTop="60dp"
+            android:layout_marginTop="63dp"
             android:orientation="vertical"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -54,6 +55,33 @@
             android:visibility="gone"
             android:id="@+id/loader"
             android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:visibility="gone"
+        android:id="@+id/errorView"
+        android:layout_below="@+id/toolbar_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:layout_centerHorizontal="true"
+            android:layout_above="@+id/textView"
+            android:layout_width="150dp"
+            android:layout_height="100dp"
+            android:src="@drawable/sad"/>
+
+        <TextView
+            android:layout_marginTop="16dp"
+            android:id="@+id/textView"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:text="No Song(s) Available"
+            android:textColor="@color/colorPrimary"
+            android:textSize="24sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 

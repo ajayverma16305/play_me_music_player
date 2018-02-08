@@ -32,7 +32,7 @@ ext {
     testRunnerVersion = '1.0.1'
     espressoCoreVersion = '3.0.1'
     tapTargetViewVersion = '1.11.0'
-    glideVersion = '4.0.0'
+    glideVersion = '3.7.0'
     timberLoggingVersion = '4.6.0'
     searchViewVersion = '1.4.0'
     circularImageVersion = '2.2.0'

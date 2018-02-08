@@ -43,8 +43,8 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
     val ACTION_PLAY = "com.androidteam.playme.ACTION_PLAY"
     val ACTION_PAUSE = "com.androidteam.playme.ACTION_PAUSE"
-    private val ACTION_PREVIOUS = "com.androidteam.playme.ACTION_PREVIOUS"
-    private val ACTION_NEXT = "com.androidteam.playme.ACTION_NEXT"
+    val ACTION_PREVIOUS = "com.androidteam.playme.ACTION_PREVIOUS"
+    val ACTION_NEXT = "com.androidteam.playme.ACTION_NEXT"
     private val ACTION_STOP = "com.androidteam.playme.ACTION_STOP"
 
     //MediaSession
@@ -695,32 +695,32 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         val actionString = playbackAction.action;
 
         when (actionString) {
-            (ACTION_PLAY) ->  /*transportControls!!.play()*/ {
+            (ACTION_PLAY) ->  {
                 transportControls!!.play()
                 Handler().postDelayed({
                     updateIconOnMainUI(PlaybackStatus.PLAYING)
-                },150)
+                },300)
             }
-            (ACTION_PAUSE) ->  /*transportControls!!.pause()*/ {
+            (ACTION_PAUSE) ->  {
                 transportControls!!.pause()
                 Handler().postDelayed({
                     updateIconOnMainUI(PlaybackStatus.PAUSED)
-                },150)
+                },300)
             }
-            (ACTION_NEXT) ->   /*transportControls!!.skipToNext()*/ {
+            (ACTION_NEXT) ->   {
                 transportControls!!.skipToNext()
                 Handler().postDelayed({
                     updateMainUIOnFromNotificationStatus()
-                },150)
+                },200)
             }
-            (ACTION_PREVIOUS) -> /*transportControls!!.skipToPrevious()*/ {
+            (ACTION_PREVIOUS) -> {
                 transportControls!!.skipToPrevious()
                 Handler().postDelayed({
                     updateMainUIOnFromNotificationStatus()
-                },150)
+                },200)
 
             }
-            (ACTION_STOP) ->  /*transportControls!!.stop()*/ {
+            (ACTION_STOP) ->  {
                 stopForeground(true)
                 transportControls!!.stop() }
         }

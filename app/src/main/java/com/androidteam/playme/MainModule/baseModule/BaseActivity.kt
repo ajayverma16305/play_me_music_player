@@ -14,24 +14,19 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.content.res.ColorStateList
-import android.graphics.drawable.Drawable
 import android.os.*
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.LinearLayoutManager
 import android.view.*
 import android.view.inputmethod.InputMethodManager
-import android.widget.RelativeLayout
-import android.widget.SeekBar
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import com.androidteam.playme.HelperModule.*
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.MusicProvider.MediaPlayerService
 import com.androidteam.playme.MusicProvider.MusicContentProvider
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.resource.drawable.GlideDrawable
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import timber.log.Timber
@@ -74,6 +69,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         val self = weakSelf.get()
         if (null != self) {
             self.loader.visibility = View.VISIBLE
+            self.music_recycler_view.visibility = View.GONE
+            self.card_view.visibility = View.GONE
         }
         initializeRecyclerView()
 
@@ -85,6 +82,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
 
                 audioList = musicContentList
                 if(audioList.size > 0){
+                    if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
+                        UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
+                    }
+
                     startFetchingAudioFilesFromStorage()
                 } else {
                     setErrorViewForNoAudio()
@@ -135,20 +136,13 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
 
     // Set Error View For No Audio
     private fun setErrorViewForNoAudio() {
-        music_recycler_view.visibility = View.GONE
-        card_view.visibility = View.GONE
-
-        val relative = RelativeLayout(this)
-
-        val errorTextView = TextView(this)
-        val layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        errorTextView.layoutParams = layoutParams
-        errorTextView.text = PlayMeConstants.NO_SONG_AVAILABLE
-        errorTextView.textSize = 24f
-        errorTextView.gravity = Gravity.CENTER
-
-        relative.addView(errorTextView)
-        main_content.addView(relative)
+        val self = weakSelf.get()
+        if (null != self) {
+            self.music_recycler_view.visibility = View.GONE
+            self.card_view.visibility = View.GONE
+            self.loader.visibility = View.GONE
+            self.errorView.visibility = View.VISIBLE
+        }
     }
 
     private fun initializeRecyclerView(){
@@ -166,6 +160,15 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
      * Initialization of UI components
      */
     private fun initUIComponents() {
+        val self = weakSelf.get()
+
+        if(null != self) {
+            self.artistName.isSelected = true
+            self.playingSongName.isSelected = true
+            self.closeArtistName.isSelected = true
+            self.closeSongName.isSelected = true
+        }
+
         val musicAdapter = MusicAdapter(this,audioList)
         music_recycler_view.adapter = musicAdapter
         musicAdapter.setSongClickedListener(this)
@@ -224,10 +227,12 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
                 if (slideOffset > 0.2) {
                     playLayout.visibility = View.GONE
+                    view.visibility = View.GONE
                     closeLayout.visibility = View.VISIBLE
 
                 } else if (slideOffset < 0.1) {
                     playLayout.visibility = View.VISIBLE
+                    view.visibility = View.VISIBLE
                     closeLayout.visibility = View.GONE
                 }
             }
@@ -277,37 +282,37 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             self.closeSongName.text = musicContentObj?.title
             self.closeArtistName.text = musicContentObj?.artist
 
-            Glide.with(this)
+            Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .listener(object  : RequestListener<Drawable> {
-
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                            self.picOnFrontView.setImageResource(R.drawable.ic_music_note_black_24dp)
+                    .error(R.drawable.playme_app_logo)
+                    .override(60,60)
+                    .listener(object : RequestListener<String, GlideDrawable>{
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
                             return true
                         }
 
-                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
                             Timber.d("Resource Ready")
                             return false
                         }
-                    })
-                    .into(self.picOnFrontView)
+                    }).into(self.picOnFrontView)
 
-            Glide.with(this)
+            Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .listener(object  : RequestListener<Drawable> {
-
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.ic_music_note_black_24dp)
+                    .error(R.drawable.placeholder)
+                    .override(300,300)
+                    .listener(object : RequestListener<String, GlideDrawable>{
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.albumImageView.setImageResource(R.drawable.placeholder)
                             return true
                         }
 
-                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
                             Timber.d("Resource Ready")
                             return false
                         }
-                    })
-                    .into(self.albumImageView)
+                    }).into(self.albumImageView)
 
             self.startTimer.text = storage?.loadAudioCurrentTime().toString()
             self.endTimer.text = musicContentObj?.duration
@@ -370,21 +375,21 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             self.playingSongName.text = (musicContentObj?.title)
             self.artistName.text = (musicContentObj?.artist)
 
-            Glide.with(this@BaseActivity)
+            Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .listener(object  : RequestListener<Drawable>{
-
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                            self.picOnFrontView.setImageResource(R.drawable.ic_music_note_black_24dp)
+                    .error(R.drawable.playme_app_logo)
+                    .override(60,60)
+                    .listener(object : RequestListener<String, GlideDrawable>{
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
                             return true
                         }
 
-                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
                             Timber.d("Resource Ready")
                             return false
                         }
-                    })
-                    .into(self.picOnFrontView)
+                    }).into(self.picOnFrontView)
 
             self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
         }
@@ -401,21 +406,21 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             self.closeSongName.text = musicContentObj?.title
             self.closeArtistName.text = musicContentObj?.artist
 
-            Glide.with(this@BaseActivity)
+            Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .listener(object  : RequestListener<Drawable>{
-
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.muic_note_big)
+                    .error(R.drawable.placeholder)
+                    .override(300,300)
+                    .listener(object : RequestListener<String, GlideDrawable>{
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.albumImageView.setImageResource(R.drawable.placeholder)
                             return true
                         }
 
-                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
                             Timber.d("Resource Ready")
                             return false
                         }
-                    })
-                    .into(self.albumImageView)
+                    }).into(self.albumImageView)
 
             self.playButton.setImageResource(R.drawable.pause)
             self.endTimer.text = musicContentObj?.duration
@@ -611,6 +616,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             if (self.playerService?.mediaPlayer != null) {
                 self.playerService?.skipToPrevious()
                 musicContentObj = self.playerService?.currentAudioDetails()
+                self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PREVIOUS))
                 setCurrentMusicDetailsToUI()
             }
         }
@@ -623,6 +629,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             if (self.playerService?.mediaPlayer != null) {
                 self.playerService?.skipToNext()
                 musicContentObj = self.playerService?.currentAudioDetails()
+                self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_NEXT))
                 setCurrentMusicDetailsToUI()
             }
         }
@@ -791,25 +798,16 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
     override fun onDestroy() {
         super.onDestroy()
         if (serviceBound) {
+            serviceConnection
             unbindService(serviceConnection)
             // service is active
             playerService!!.stopSelf()
         }
-         mHandler.removeCallbacks(mUpdateTimeTask)
-    }
-
-    override fun onResume() {
-        if (audioList.size > 0) {
-            if (!UtilityApp.getAppDatabaseValue(this)) {
-                UtilityApp.startTapTargetViewForPlayIcon(this, playOnHomeIcon, toolbar, R.id.action_search)
-            }
-        }
-        super.onResume()
+        mHandler.removeCallbacks(mUpdateTimeTask)
     }
 
     override fun onPause() {
         val self = weakSelf.get()
-
         if (null != self) {
             val mediaPlayer = self.playerService?.mediaPlayer
             if (null != mediaPlayer) {
