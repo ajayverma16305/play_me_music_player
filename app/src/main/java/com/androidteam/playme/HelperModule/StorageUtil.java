@@ -14,6 +14,7 @@ import java.util.ArrayList;
  */
 public class StorageUtil {
 
+    private final String STORAGE_AUDIO_AVAILABLE = "com.androidteam.playme.STORAGE_AVAILABLE";
     private final String STORAGE_AUDIO_LIST = "com.androidteam.playme.STORAGE_AUDIO_LIST";
     private final String STORAGE_INDEX = "com.androidteam.playme.STORAGE_INDEX";
     private final String STORAGE_PROGRESS = "com.androidteam.playme.STORAGE_PROGRESS";
@@ -77,6 +78,13 @@ public class StorageUtil {
         editor.apply();
     }
 
+    public void storeAvailable(boolean available) {
+        preferences = context.getSharedPreferences(STORAGE_AUDIO_AVAILABLE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("available", available);
+        editor.apply();
+    }
+
     public void storeAudioCurrentTime(String currentTime) {
         preferences = context.getSharedPreferences(STORAGE_CURRENT_TIME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
@@ -130,6 +138,11 @@ public class StorageUtil {
         return preferences.getBoolean("isShuffle", false); //return -1 if no data found
     }
 
+    public boolean loadAvailable() {
+        preferences = context.getSharedPreferences(STORAGE_AUDIO_AVAILABLE, Context.MODE_PRIVATE);
+        return preferences.getBoolean("available", false); //return -1 if no data found
+    }
+
     public int loadAudioProgress() {
         preferences = context.getSharedPreferences(STORAGE_PROGRESS, Context.MODE_PRIVATE);
         return preferences.getInt("audioProgress", 0);//return -1 if no data found
@@ -151,6 +164,4 @@ public class StorageUtil {
         editor.clear();
         editor.commit();
     }
-
-
 }

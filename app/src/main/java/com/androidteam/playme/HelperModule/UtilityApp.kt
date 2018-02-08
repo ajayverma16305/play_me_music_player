@@ -24,7 +24,7 @@ class UtilityApp {
         fun saveValuesToAppDatabase(context: Context) {
             val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
             val editor = sharedPreferences.edit()
-            editor.putBoolean(Constants.USER_DEFAULT_KEY_STORE,true)
+            editor.putBoolean(PlayMeConstants.USER_DEFAULT_KEY_STORE,true)
             editor.apply()
         }
 
@@ -33,7 +33,7 @@ class UtilityApp {
          */
         fun getAppDatabaseValue(context: Context) : Boolean{
             val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-            return sharedPreferences.getBoolean(Constants.USER_DEFAULT_KEY_STORE,false)
+            return sharedPreferences.getBoolean(PlayMeConstants.USER_DEFAULT_KEY_STORE,false)
         }
 
         /**
@@ -41,7 +41,7 @@ class UtilityApp {
          */
         fun startTapTargetViewForPlayIcon(context: Context,view: View,toolbar: Toolbar,menuId : Int){
             TapTargetView.showFor(context as Activity, // `this` is an Activity
-                    TapTarget.forView(view, Constants.PLAY_MUSIC_STR, Constants.PLAY_MUSIC_DESC)
+                    TapTarget.forView(view, PlayMeConstants.PLAY_MUSIC_STR, PlayMeConstants.PLAY_MUSIC_DESC)
                             // All options below are optional
                             .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
                             .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
@@ -78,7 +78,7 @@ class UtilityApp {
          */
         fun startTapTargetOnSearchIcon(context: Context,toolbar: Toolbar, menuId : Int){
             TapTargetView.showFor(context as Activity,
-                    TapTarget.forToolbarMenuItem(toolbar,menuId, Constants.SEARCH_MUSIC_STR, Constants.SEARCH_MUSIC_DESC)
+                    TapTarget.forToolbarMenuItem(toolbar,menuId, PlayMeConstants.SEARCH_MUSIC_STR, PlayMeConstants.SEARCH_MUSIC_DESC)
                             // All options below are optional
                             .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
                             .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle

@@ -23,6 +23,7 @@ import android.graphics.Bitmap
 import android.os.*
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
+import android.support.v4.media.MediaDescriptionCompat
 import android.util.Patterns
 import android.webkit.URLUtil
 import android.widget.Toast
@@ -40,8 +41,8 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener,
         AudioManager.OnAudioFocusChangeListener {
 
-    private val ACTION_PLAY = "com.androidteam.playme.ACTION_PLAY"
-    private val ACTION_PAUSE = "com.androidteam.playme.ACTION_PAUSE"
+    val ACTION_PLAY = "com.androidteam.playme.ACTION_PLAY"
+    val ACTION_PAUSE = "com.androidteam.playme.ACTION_PAUSE"
     private val ACTION_PREVIOUS = "com.androidteam.playme.ACTION_PREVIOUS"
     private val ACTION_NEXT = "com.androidteam.playme.ACTION_NEXT"
     private val ACTION_STOP = "com.androidteam.playme.ACTION_STOP"
@@ -195,6 +196,15 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         }
     }
 
+    fun resumeMediaPlayerWhereUserLeft(){
+        if (!mediaPlayer!!.isPlaying) {
+            startPlayingMusic()
+
+            mediaPlayer!!.seekTo(resumePosition)
+            mediaPlayer!!.start()
+        }
+    }
+
     fun isPlaying() : Boolean {
         return mediaPlayer!!.isPlaying
     }
@@ -226,7 +236,15 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         }
         else {
             if (!storageUtil!!.loadAudioShuffledState()) {
-                skipToNext()
+
+                if(storageUtil!!.loadAvailable()){
+                    skipToNext()
+                }
+                else {
+                    activeAudio = audioList[audioIndex]
+                    mediaPlayer?.reset()
+                    startPlayingMusic()
+                }
             }
             else {
                 activeAudio = audioList[getRandomAudioFileIndex()]
@@ -241,11 +259,17 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     }
 
     fun getRandomAudioFileIndex() : Int {
-        val rand = Random()
-        audioIndex = rand.nextInt((audioList.size - 1) - 0 + 1) + 0
+        try {
+            val rand = Random()
+            audioIndex = rand.nextInt((audioList.size - 1) - 0 + 1) + 0
 
-        //Update stored index
-        storageUtil?.storeAudioIndex(audioIndex)
+            //Update stored index
+            storageUtil?.storeAudioIndex(audioIndex)
+        }
+        catch (e: Exception) {
+            Timber.d(e.message)
+            audioIndex = 0
+        }
         return audioIndex
     }
 
@@ -559,6 +583,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         //unregister BroadcastReceivers
        // unregisterReceiver(becomingNoisyReceiver)
         unregisterReceiver(playNewAudio)
+        stopForeground(true)
 
         //clear cached playlist
         storageUtil!!.clearCachedAudioPlaylist()
@@ -568,7 +593,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     fun buildNotification(playbackStatus: PlaybackStatus) {
         try {
             var notificationAction = android.R.drawable.ic_media_pause;//needs to be initialized
-            var play_pauseAction : PendingIntent? = null;
+            var play_pauseAction : PendingIntent? = null
 
             //Build a new notification according to the current state of the MediaPlayer
             if (playbackStatus == PlaybackStatus.PLAYING) {
@@ -587,12 +612,13 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
             // Sets an ID for the notification, so it can be updated.
             val CHANNEL_ID = "PlayMe_Notification"// The id of the channel.
             val name = "PlayMe"// The user-visible name of the channel.
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val importance = NotificationManager.IMPORTANCE_HIGH
+                val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
                 val notificationChannel = NotificationChannel(CHANNEL_ID,name,importance)
-               // notificationChannel.enableLights(true);
+                notificationChannel.enableLights(true);
+                notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 notificationManager.createNotificationChannel(mChannel);
             }
 
@@ -604,17 +630,23 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setSmallIcon(android.R.drawable.stat_sys_headset)
                     .setStyle(android.support.v7.app.NotificationCompat.MediaStyle()
                             .setShowActionsInCompactView(0, 1, 2)
-                            .setMediaSession(mediaSession!!.sessionToken))
+                            .setMediaSession(mediaSession!!.sessionToken)
+                            .setShowCancelButton(true)
+                            .setCancelButtonIntent(playbackAction(4)))
 
                     .setColor(resources.getColor(R.color.colorPrimary))
                     .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
                     .addAction(notificationAction, "pause", play_pauseAction)
                     .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2))
+                    .setDeleteIntent(playbackAction(4))
                     .setChannelId(CHANNEL_ID)
-                    .setOngoing(false)
+                    .setOngoing(true)
+                    .setOnlyAlertOnce(true)
+                    .setWhen(0)
 
             val contentIntent = PendingIntent.getActivity(this, 0,
                     Intent(this, BaseActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT);
+
             notification.setContentIntent(contentIntent);
             notificationManager.notify(NOTIFICATION_ID, notification.build())
 
@@ -628,7 +660,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         notificationManager.cancel(NOTIFICATION_ID);
     }
 
-    private fun playbackAction(actionNumber: Int): PendingIntent? {
+    fun playbackAction(actionNumber: Int): PendingIntent? {
         val playbackAction = Intent(this, MediaPlayerService::class.java)
         when (actionNumber) {
             0 -> {
@@ -652,34 +684,44 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
             else -> {
+                playbackAction.action =  ACTION_STOP
+                return PendingIntent.getService(this, actionNumber, playbackAction, 0)
             }
         }
-        return null
     }
 
-    private fun handleIncomingActions(playbackAction : Intent ) {
+    fun handleIncomingActions(playbackAction : Intent ) {
         if (playbackAction == null && playbackAction.action == null) return;
         val actionString = playbackAction.action;
 
         when (actionString) {
             (ACTION_PLAY) ->  /*transportControls!!.play()*/ {
                 transportControls!!.play()
-                updateIconOnMainUI(PlaybackStatus.PLAYING)
+                Handler().postDelayed({
+                    updateIconOnMainUI(PlaybackStatus.PLAYING)
+                },150)
             }
             (ACTION_PAUSE) ->  /*transportControls!!.pause()*/ {
                 transportControls!!.pause()
-                updateIconOnMainUI(PlaybackStatus.PAUSED)
+                Handler().postDelayed({
+                    updateIconOnMainUI(PlaybackStatus.PAUSED)
+                },150)
             }
             (ACTION_NEXT) ->   /*transportControls!!.skipToNext()*/ {
                 transportControls!!.skipToNext()
-                updateMainUIOnFromNotificationStatus()
+                Handler().postDelayed({
+                    updateMainUIOnFromNotificationStatus()
+                },150)
             }
             (ACTION_PREVIOUS) -> /*transportControls!!.skipToPrevious()*/ {
                 transportControls!!.skipToPrevious()
-                updateMainUIOnFromNotificationStatus()
+                Handler().postDelayed({
+                    updateMainUIOnFromNotificationStatus()
+                },150)
+
             }
             (ACTION_STOP) ->  /*transportControls!!.stop()*/ {
-                //stopForeground(true)
+                stopForeground(true)
                 transportControls!!.stop() }
         }
     }

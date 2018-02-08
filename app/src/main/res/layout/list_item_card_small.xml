@@ -36,7 +36,7 @@
                     android:layout_height="@dimen/cover_size_mini"
                     android:scaleType="centerCrop"
                     android:tint="@color/colorPrimary"
-                    tools:src="@drawable/ic_music_note_white_24dp" />
+                    tools:src="@drawable/ic_music_note_black_24dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"

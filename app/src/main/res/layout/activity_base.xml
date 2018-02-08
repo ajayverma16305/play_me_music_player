@@ -31,11 +31,33 @@
             android:layout_height="wrap_content" />
     </FrameLayout>
 
-    <android.support.v7.widget.RecyclerView
+    <RelativeLayout
         android:layout_below="@+id/toolbar_container"
-        android:id="@+id/music_recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/music_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <com.futuremind.recyclerviewfastscroll.FastScroller
+            android:id="@+id/fastscroll"
+            android:layout_marginTop="60dp"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"/>
+
+        <ProgressBar
+            android:visibility="gone"
+            android:id="@+id/loader"
+            android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </RelativeLayout>
 
     <android.support.design.widget.CoordinatorLayout
         android:id="@+id/card_view"

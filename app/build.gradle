@@ -36,6 +36,7 @@ ext {
     timberLoggingVersion = '4.6.0'
     searchViewVersion = '1.4.0'
     circularImageVersion = '2.2.0'
+    fastScrollerRecyclerViewVersion = '0.2.5'
 }
 
 dependencies {
@@ -47,12 +48,10 @@ dependencies {
     implementation "com.android.support:design:$designCompactVersion"
     implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
     implementation "com.android.support:support-v4:$supportVersion"
-    implementation 'com.android.support:support-v4:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "com.android.support.test:runner:$testRunnerVersion"
     androidTestImplementation "com.android.support.test.espresso:espresso-core:$espressoCoreVersion"
-
     // Tap target view library
     implementation "com.getkeepsafe.taptargetview:taptargetview:$tapTargetViewVersion"
 
@@ -69,6 +68,9 @@ dependencies {
     implementation "de.hdodenhof:circleimageview:$circularImageVersion"
 
     // GSON library
-    compile group: 'com.google.code.gson', name: 'gson', version: '2.7', changing: true
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.7', changing: true
+
+    // Fast Scroller Recycler View
+    implementation "com.futuremind.recyclerfastscroll:fastscroll:$fastScrollerRecyclerViewVersion"
 
 }

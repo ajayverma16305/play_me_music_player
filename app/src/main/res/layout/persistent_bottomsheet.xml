@@ -38,12 +38,12 @@
                 android:scaleType="centerCrop"
                 android:tint="@color/colorPrimary"
                 android:layout_gravity="center_vertical"
-                tools:src="@drawable/ic_music_note_white_24dp" />
+                tools:src="@drawable/ic_music_note_black_24dp" />
 
             <LinearLayout
                 android:paddingStart="4dp"
                 android:paddingBottom="4dp"
-                android:layout_weight="1.8"
+                android:layout_weight="1.77"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
@@ -77,7 +77,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_weight=".2"
+                android:layout_weight=".3"
                 android:layout_marginStart="5dp"
                 android:layout_gravity="center_vertical"
                 android:layout_width="0dp"
@@ -89,7 +89,7 @@
                     android:scaleType="centerCrop"
                     android:id="@+id/playOnHomeIcon"
                     android:tint="@color/colorPrimary"
-                    android:layout_width="30dp"
+                    android:layout_width="35dp"
                     android:layout_height="match_parent"
                     android:src="@drawable/ic_play_white"/>
             </LinearLayout>
@@ -169,9 +169,9 @@
         android:layout_height="0.5dp"
         android:background="@color/colorPrimary"/>
 
-    <LinearLayout
+    <!--<LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"/>
+        android:layout_height="80dp"/>-->
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -194,8 +194,10 @@
                 android:layout_height="wrap_content">
 
                 <de.hdodenhof.circleimageview.CircleImageView
+                    android:layout_marginTop="24dp"
                     android:id="@+id/albumImageView"
                     android:layout_width="match_parent"
+                    tools:src="@drawable/playme_app_logo"
                     android:maxHeight="300dp"
                     android:layout_height="280dp"/>
 
@@ -275,7 +277,7 @@
                             android:layout_gravity="center_vertical"
                             android:layout_height="wrap_content"
                             android:tint="@color/hintColor"
-                            android:src="@drawable/ic_shuffle_white_24dp"/>
+                            android:src="@drawable/ic_shuffle_black_24dp"/>
 
                         <ImageView
                             android:layout_width="0dp"
@@ -291,6 +293,7 @@
                             android:layout_width="60dp"
                             android:layout_height="60dp"
                             android:elevation="16dp"
+                            android:tint="@color/white"
                             android:layout_margin="@dimen/fab_margin"
                             android:src="@drawable/ic_play_white"
                             app:backgroundTint="@color/colorPrimary" />
@@ -312,7 +315,6 @@
                             android:layout_gravity="center_vertical"
                             android:layout_height="wrap_content"
                             android:src="@drawable/infinite_loop"/>
-
                     </LinearLayout>
 
                 </RelativeLayout>

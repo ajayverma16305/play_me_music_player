@@ -6,14 +6,11 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import com.androidteam.playme.HelperModule.Constants
+import com.androidteam.playme.HelperModule.PlayMeConstants
 import com.androidteam.playme.HelperModule.PermissionManager
 import com.androidteam.playme.HelperModule.StorageUtil
-import com.androidteam.playme.HelperModule.UtilityApp
 import com.androidteam.playme.MainModule.baseModule.BaseActivity
 import com.androidteam.playme.R
-import java.util.ArrayList
 import java.util.HashMap
 
 class LaunchScreenActivity : AppCompatActivity() {
@@ -24,11 +21,11 @@ class LaunchScreenActivity : AppCompatActivity() {
 
         if(PermissionManager.checkForStoragePermission(this)) {
             Handler().postDelayed(Runnable {
+                StorageUtil(this).storeAvailable(true)
                 showMainScreen()
             },200)
         }
     }
-
 
     private fun showMainScreen() {
         startActivity(Intent(this, BaseActivity::class.java))
@@ -40,7 +37,7 @@ class LaunchScreenActivity : AppCompatActivity() {
      */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
-            Constants.MEDIA_ACCESS_REQUEST_CODE -> {
+            PlayMeConstants.MEDIA_ACCESS_REQUEST_CODE -> {
                 val perms = HashMap<String, Int>()
                 perms.put(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, PackageManager.PERMISSION_GRANTED)
 
