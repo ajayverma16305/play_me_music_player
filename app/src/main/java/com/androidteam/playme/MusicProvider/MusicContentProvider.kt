@@ -14,12 +14,6 @@ import java.lang.ref.WeakReference
 class MusicContentProvider(private val selfWeak : WeakReference<Context>,private val audioResourceReadyListener
         : OnAudioResourcesReadyListener) : AsyncTask<Void, Void, ArrayList<MusicContent>?>(){
 
-    var onAudioResourcesReadyListener : OnAudioResourcesReadyListener? = null
-
-    fun setOnAudioResourcesListReadyListener(onAudioResourcesReadyListener : OnAudioResourcesReadyListener){
-        this.onAudioResourcesReadyListener = onAudioResourcesReadyListener
-    }
-
     override fun doInBackground(vararg p0: Void?): ArrayList<MusicContent> {
         return getAllMusicPathList(selfWeak.get()!!)
     }

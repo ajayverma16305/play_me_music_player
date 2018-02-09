@@ -280,11 +280,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.musical_note)
+                    .error(R.drawable.placeholder)
                     .override(300, 300)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.musical_note)
+                            self.albumImageView.setImageResource(R.drawable.placeholder)
                             return true
                         }
 
@@ -387,12 +387,12 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.musical_note)
+                    .error(R.drawable.placeholder)
                     .override(300, 300)
                     .fitCenter()
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.musical_note)
+                            self.albumImageView.setImageResource(R.drawable.placeholder)
                             return true
                         }
 
@@ -448,11 +448,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.musical_note)
+                    .error(R.drawable.placeholder)
                     .override(300, 300)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.musical_note)
+                            self.albumImageView.setImageResource(R.drawable.placeholder)
                             return true
                         }
 
