@@ -69,7 +69,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     private var phoneStateListener: PhoneStateListener? = null
     private var telephonyManager: TelephonyManager? = null
     private var audioList = ArrayList<MusicContent>()
-    private var audioIndex = 0
+    var audioIndex = 0
     var activeAudio : MusicContent? = null;
     private var storageUtil : StorageUtil? = null
 
@@ -82,6 +82,16 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         fun onAudioStateChange(status: PlaybackStatus)
     }
     private var notificationChangedListener : OnNotificationChangeListener ?= null
+
+    interface OnMediaPlayerErrorListener{
+        fun onErrorHandled(activeAudio: MusicContent)
+    }
+
+    private var onMediaPlayerErrorListener : OnMediaPlayerErrorListener ?= null
+
+    fun setOnMediaPlayerErrorListener(onMediaPlayerErrorListener : OnMediaPlayerErrorListener){
+        this.onMediaPlayerErrorListener = onMediaPlayerErrorListener
+    }
 
     fun setOnSongChangedListener(updateUIListener : OnAudioChangedListener){
         this.updateUIListener = updateUIListener
@@ -233,15 +243,9 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         }
         else {
             if (!storageUtil!!.loadAudioShuffledState()) {
+                mediaPlayer?.reset()
 
-                if(storageUtil!!.loadAvailable()){
-                    skipToNext()
-                }
-                else {
-                    activeAudio = audioList[audioIndex]
-                    mediaPlayer?.reset()
-                    startPlayingMusic()
-                }
+                skipToNext()
             }
             else {
                 activeAudio = audioList[getRandomAudioFileIndex()]
@@ -249,7 +253,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 stopMedia()
                 //reset mediaPlayer
                 mediaPlayer!!.reset()
-                //initMediaPlayer()
+                initMediaPlayer()
                 startPlayingMusic()
             }
         }
@@ -275,19 +279,46 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     override fun onError(mp: MediaPlayer, what: Int, extra: Int): Boolean {
         //Invoked when there has been an error during an asynchronous operation.
         //Invoked when there has been an error during an asynchronous operation
-        when (what) {
-            MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK -> Log.d("MediaPlayer Error", "MEDIA ERROR NOT VALID FOR PROGRESSIVE PLAYBACK " + extra)
-            MediaPlayer.MEDIA_ERROR_SERVER_DIED -> Log.d("MediaPlayer Error", "MEDIA ERROR SERVER DIED " + extra)
+        stopMedia()
+        stopSelf()
+        mediaPlayer?.reset()
+
+       /* when (what) {
+            MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK -> {
+                Log.d("MediaPlayer Error", "MEDIA ERROR NOT VALID FOR PROGRESSIVE PLAYBACK " + extra)
+                return false
+            }
+            MediaPlayer.MEDIA_ERROR_SERVER_DIED -> {
+                Log.d("MediaPlayer Error", "MEDIA ERROR SERVER DIED " + extra)
+                return false
+            }
             MediaPlayer.MEDIA_ERROR_UNKNOWN -> {
                 Log.d("MediaPlayer Error", "MEDIA ERROR UNKNOWN " + extra)
                 Toast.makeText(applicationContext,"MEDIA ERROR UNKNOWN ",Toast.LENGTH_SHORT).show()
+                return false
             }
         }
-        return false
+*/
+        Toast.makeText(applicationContext,"MalFunctioned",Toast.LENGTH_SHORT).show()
+        onErrorStateVerified()
+        /**
+         * True if the method handled the error, false if it didn't.
+         * Returning false, or not having an OnErrorListener at all, will cause the OnCompletionListener to be called.
+         */
+        return true
+    }
+
+    private fun onErrorStateVerified(){
+        activeAudio = audioList[getRandomAudioFileIndex()]
+
+        if(null != onMediaPlayerErrorListener){
+            onMediaPlayerErrorListener!!.onErrorHandled(activeAudio!!)
+        }
     }
 
     override fun onInfo(mp: MediaPlayer, what: Int, extra: Int): Boolean {
         //Invoked to communicate some info.
+        Timber.d("here")
         return false
     }
 
@@ -610,7 +641,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
             val name = "PlayMe"// The user-visible name of the channel.
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val importance = NotificationManager.IMPORTANCE_HIGH
+                val importance = NotificationManager.IMPORTANCE_NONE
                 val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
                 val notificationChannel = NotificationChannel(CHANNEL_ID,name,importance)
                 notificationChannel.enableLights(true);
@@ -619,7 +650,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
             }
 
             val notification = NotificationCompat.Builder(this)
-                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                   // .setVisibility(NotificationCompat.VISIBILITY_SECRET)
                     .setContentTitle(activeAudio!!.title)
                     .setContentText(activeAudio!!.artist)
                     .setLargeIcon(largeIcon)
@@ -638,8 +669,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setChannelId(CHANNEL_ID)
                     .setOngoing(true)
                     .setOnlyAlertOnce(true)
-                    .setWhen(0)
-                    .setSound(null)
 
             val contentIntent = PendingIntent.getActivity(this, 0,
                     Intent(this, BaseActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT);

@@ -53,7 +53,7 @@ class LaunchScreenActivity : AppCompatActivity() {
                 if (null != self) {
                     self.loader.visibility = View.GONE
                 }
-                StorageUtil(applicationContext).storeAvailable(true)
+
                 showMainScreen(musicContentList)
             }
         })
@@ -82,6 +82,7 @@ class LaunchScreenActivity : AppCompatActivity() {
         if (null != musicContentList) {
             audioList = musicContentList
         }
+        StorageUtil(applicationContext).storeAvailable(true)
         startActivity(Intent(this, BaseActivity::class.java))
         finish()
     }

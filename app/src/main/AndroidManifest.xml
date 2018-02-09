@@ -6,7 +6,6 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.INTERNET" />
     <permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
@@ -19,7 +18,8 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".SplashModule.LaunchScreenActivity"
-            android:theme="@style/AppTheme.Splash">
+            android:theme="@style/AppTheme.Splash"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -35,8 +35,6 @@
             android:launchMode="singleTop"/>
 
         <service android:name=".MusicProvider.MediaPlayerService" />
-
-        <activity android:name=".MusicDetailModule.MusicDetailScreenActivity"/>
     </application>
 
 </manifest>

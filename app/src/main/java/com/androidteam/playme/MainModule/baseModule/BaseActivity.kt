@@ -34,10 +34,11 @@ import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.collections.ArrayList
 
-class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedListener,
+class BaseActivity : AppCompatActivity(), View.OnClickListener,
         MaterialSearchView.OnQueryTextListener, MaterialSearchView.SearchViewListener,
         SeekBar.OnSeekBarChangeListener, MediaPlayerService.OnAudioChangedListener,
-        MusicAdapter.OnShuffleIconClickListener, MediaPlayerService.OnNotificationChangeListener {
+        MusicAdapter.OnShuffleIconClickListener, MediaPlayerService.OnNotificationChangeListener,OnAudioPickedListener ,
+        MediaPlayerService.OnMediaPlayerErrorListener{
 
     private lateinit var sheetBehavior: BottomSheetBehavior<*>
     private var playerService: MediaPlayerService? = null
@@ -155,6 +156,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         search_view.setOnSearchViewListener(this)
         search_view.setHint(getString(R.string.action_search))
         search_view.setSuggestionIcon(ContextCompat.getDrawable(applicationContext, R.drawable.ic_music_note_black_24dp))
+        search_view.setSubmitOnClick(true)
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -283,7 +285,13 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         }
                     }).into(self.albumImageView)
 
-            self.startTimer.text = storage?.loadAudioCurrentTime().toString()
+            val startTimerText = if(storage?.loadAudioCurrentTime().toString() != PlayMeConstants.TIMER_ZERO){
+                storage?.loadAudioCurrentTime().toString()
+            } else {
+                PlayMeConstants.TIMER_ZERO
+            }
+
+            self.startTimer.text = startTimerText
             self.endTimer.text = musicContentObj?.duration
 
             self.playOnHomeIcon.tag = if (storage?.loadAudioIconTag() == PlayMeConstants.PAUSE) {
@@ -311,6 +319,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
             playerService?.initMediaPlayer()
             playerService?.setOnSongChangedListener(this@BaseActivity)
             playerService?.setOnNotificationChangeListener(this@BaseActivity)
+            playerService?.setOnMediaPlayerErrorListener(this@BaseActivity)
             Timber.d("Service Bound")
         }
 
@@ -396,11 +405,72 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
     }
 
+    override fun onErrorHandled(activeAudio: MusicContent) {
+        musicContentObj = activeAudio
+        setLastSavedStateAfterMediaPlayerErrorOccurred()
+    }
+
+    // Set Last Saved State After Media Player Error Occurred
+    private fun setLastSavedStateAfterMediaPlayerErrorOccurred(){
+        val self = weakSelf.get()
+
+        if(null != self){
+            self.storage?.storeAudioIndex(self.playerService!!.audioIndex)
+            self.frontSeekBar.progress = 0
+            self.detailSeekBar.progress = 0
+
+            self.startTimer.text = PlayMeConstants.TIMER_ZERO
+            self.playingSongName.text = (musicContentObj?.title)
+            self.artistName.text = (musicContentObj?.artist)
+
+            Glide.with(applicationContext)
+                    .load(musicContentObj?.cover)
+                    .error(R.drawable.playme_app_logo)
+                    .override(60, 60)
+                    .listener(object : RequestListener<String, GlideDrawable> {
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
+                            return true
+                        }
+
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                            Timber.d("Resource Ready")
+                            return false
+                        }
+                    }).into(self.picOnFrontView)
+
+            self.playOnHomeIcon.setImageResource(R.drawable.play_main)
+
+            self.closeSongName.text = musicContentObj?.title
+            self.closeArtistName.text = musicContentObj?.artist
+
+            Glide.with(applicationContext)
+                    .load(musicContentObj?.cover)
+                    .error(R.drawable.placeholder)
+                    .override(300, 300)
+                    .listener(object : RequestListener<String, GlideDrawable> {
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.albumImageView.setImageResource(R.drawable.placeholder)
+                            return true
+                        }
+
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                            Timber.d("Resource Ready")
+                            return false
+                        }
+                    }).into(self.albumImageView)
+
+            self.playButton.setImageResource(R.drawable.ic_play_white)
+            self.endTimer.text = musicContentObj?.duration
+        }
+    }
+
     private fun playAudio(position: Int) {
         audioIndex = position
 
         //Store Serializable audioList to SharedPreferences
         storage?.storeAudioIndex(audioIndex)
+        storage?.storeAvailable(false)
         storage?.storeAudioTotalTime(endTimer.text.toString())
 
         //Check is service is active
@@ -432,7 +502,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                     val totalDuration = mediaPlayer.duration
                     val currentDuration = mediaPlayer.currentPosition
 
-                    self.startTimer.text = (utils.milliSecondsToTimer(currentDuration.toLong()));
+                    self.startTimer.text = (utils.milliSecondsToTimer(currentDuration.toLong()))
+
                     val progress = utils.getProgressPercentage(currentDuration.toLong(), totalDuration.toLong())
                     self.frontSeekBar.progress = progress
                     self.detailSeekBar.progress = progress
@@ -449,6 +520,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
+        hideKeyboard()
         val self = weakSelf.get()
 
         var isFound = false
@@ -478,8 +550,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                 self.playerService?.startPlayingMusic()
             }
         }
-
-        hideKeyboard()
         return false
     }
 
@@ -577,28 +647,26 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
     }
 
+    // Previous Icon Action
     private fun previousIconAction() {
         val self = weakSelf.get()
 
         if (null != self) {
             if (self.playerService?.mediaPlayer != null) {
-                self.playerService?.skipToPrevious()
                 musicContentObj = self.playerService?.currentAudioDetails()
                 self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PREVIOUS))
-                setCurrentMusicDetailsToUI()
             }
         }
     }
 
+    // Next Icon Action
     private fun nextIconAction() {
         val self = weakSelf.get()
 
         if (null != self) {
             if (self.playerService?.mediaPlayer != null) {
-                self.playerService?.skipToNext()
                 musicContentObj = self.playerService?.currentAudioDetails()
                 self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_NEXT))
-                setCurrentMusicDetailsToUI()
             }
         }
     }
@@ -617,7 +685,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.playButton.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.resumeMedia()
                         self.playerService?.handleIncomingActions(Intent(self.playerService?.ACTION_PLAY))
                     }
                     PlayMeConstants.PAUSE -> {
@@ -625,7 +692,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.playButton.setImageResource(R.drawable.ic_play_white)
                         self.playButton.tag = PlayMeConstants.PLAYING
                         self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
-                        self.playerService?.pauseMedia()
                         self.playerService?.handleIncomingActions(Intent(self.playerService?.ACTION_PAUSE))
                     }
                     else -> {
@@ -633,7 +699,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.playButton.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.storage?.storeAvailable(false)
                         self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
 
                         if (storage?.loadAudioSeekPosition() != 0) {
@@ -663,7 +728,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.playButton.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.resumeMedia()
                         self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
                     }
                     PlayMeConstants.PAUSE -> {
@@ -671,7 +735,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.playButton.setImageResource(R.drawable.ic_play_white)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.pauseMedia()
                         self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
                     }
                     else -> {
@@ -679,7 +742,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
                         self.playOnHomeIcon.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.storage?.storeAvailable(false)
                         self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
 
                         if (storage?.loadAudioSeekPosition() != 0) {
@@ -695,6 +757,9 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
     }
 
+    /**
+     * Update On Screen Icons
+     */
     private fun updateOnScreenIcons(status: PlaybackStatus) {
         val self = weakSelf.get()
 
@@ -713,11 +778,12 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         }
     }
 
+    // Close Action
     private fun closeAction() {
         val self = weakSelf.get()
 
         if (null != self) {
-            BottomSheetBehavior.from(self.bottomSheet).setState(BottomSheetBehavior.STATE_COLLAPSED);
+            BottomSheetBehavior.from(self.bottomSheet).state = (BottomSheetBehavior.STATE_COLLAPSED);
         }
     }
 
@@ -778,7 +844,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener, OnAudioPickedLis
         if (null != self) {
             val mediaPlayer = self.playerService?.mediaPlayer
             if (null != mediaPlayer) {
-                self.storage?.storeAudioIndex(self.audioIndex)
+                self.storage?.storeAudioIndex(self.playerService!!.audioIndex)
                 self.storage?.storeAudioCurrentSeekPosition(mediaPlayer.currentPosition)
                 self.storage?.storeAudioProgress(self.frontSeekBar.progress)
                 self.storage?.storeAudioCurrentTime(self.startTimer.text.toString())

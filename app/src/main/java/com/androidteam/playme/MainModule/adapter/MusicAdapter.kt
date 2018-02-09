@@ -1,7 +1,6 @@
 package com.androidteam.playme.MainModule.adapter
 
 import android.content.Context
-import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -55,10 +54,10 @@ class MusicAdapter(val context : Context,private val songsList: List<MusicConten
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder? {
-        return if(viewType == TYPE_HEADER){
-            HeaderViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.music_header_view, parent, false))
+         if(viewType == TYPE_HEADER){
+            return  HeaderViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.music_header_view, parent, false))
         } else {
-            ItemHolder(LayoutInflater.from(parent.context).inflate(R.layout.list_item_card_small, parent, false))
+             return ItemHolder(LayoutInflater.from(parent.context).inflate(R.layout.list_item_card_small, parent, false))
         }
     }
 
@@ -94,7 +93,6 @@ class MusicAdapter(val context : Context,private val songsList: List<MusicConten
             }
         } else {
             val headerView = holder as HeaderViewHolder
-
             headerView.mHeaderShuffleTextView.setOnClickListener{
                 if(null != shuffleClickListener){
                     shuffleClickListener!!.shuffleAction(headerView.mHeaderShuffleTextView)
@@ -116,15 +114,15 @@ class MusicAdapter(val context : Context,private val songsList: List<MusicConten
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if(position == 0){
-            TYPE_HEADER
+         if(position == 0){
+            return TYPE_HEADER
         } else {
-            TYPE_ITEM
+             return TYPE_ITEM
         }
     }
 
     override fun getItemCount(): Int {
-        return if(songsList.size > 0){
+        return if(songsList.isNotEmpty()){
             (songsList.size + 1)
         } else{
            0

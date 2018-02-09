@@ -14,6 +14,7 @@ import java.util.ArrayList;
  */
 public class StorageUtil {
 
+    private final String STORAGE_AUDIO_ACTIVE = "com.androidteam.playme.STORAGE_ACTIVE";
     private final String STORAGE_AUDIO_AVAILABLE = "com.androidteam.playme.STORAGE_AVAILABLE";
     private final String STORAGE_AUDIO_LIST = "com.androidteam.playme.STORAGE_AUDIO_LIST";
     private final String STORAGE_INDEX = "com.androidteam.playme.STORAGE_INDEX";
@@ -85,6 +86,14 @@ public class StorageUtil {
         editor.apply();
     }
 
+    public void storeAudioActive(boolean active) {
+        preferences = context.getSharedPreferences(STORAGE_AUDIO_ACTIVE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("active", active);
+        editor.apply();
+    }
+
+
     public void storeAudioCurrentTime(String currentTime) {
         preferences = context.getSharedPreferences(STORAGE_CURRENT_TIME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
@@ -109,6 +118,11 @@ public class StorageUtil {
     public boolean loadAudioIsRepeatOne() {
         preferences = context.getSharedPreferences(STORAGE_REPEAT, Context.MODE_PRIVATE);
         return preferences.getBoolean("audioRepeatOne", false); //return -1 if no data found
+    }
+
+    public boolean loadAudioActive() {
+        preferences = context.getSharedPreferences(STORAGE_AUDIO_ACTIVE, Context.MODE_PRIVATE);
+        return preferences.getBoolean("active", false); //return -1 if no data found
     }
 
     public void storeAudioIconTag(String tag) {
