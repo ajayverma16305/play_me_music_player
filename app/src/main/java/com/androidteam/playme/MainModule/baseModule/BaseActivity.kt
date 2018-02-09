@@ -21,9 +21,11 @@ import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import com.androidteam.playme.HelperModule.*
+import com.androidteam.playme.Listeners.OnAudioResourcesReadyListener
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.MusicProvider.MediaPlayerService
+import com.androidteam.playme.MusicProvider.MusicContentProvider
 import com.androidteam.playme.SplashModule.LaunchScreenActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.GlideDrawable
@@ -52,6 +54,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     private var storage: StorageUtil? = null
     private val utils: TimeUtilities = TimeUtilities()
     private var weakSelf: WeakReference<BaseActivity> = WeakReference(this)
+    private val musicAdapter : MusicAdapter? = null
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,13 +78,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
-    override fun onResume() {
-        if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
-            UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
-        }
-        super.onResume()
-    }
-
     // Start Fetching Audio Files From Storage
     private fun startFetchingAudioFilesFromStorage() {
         music_recycler_view.visibility = View.VISIBLE
@@ -94,12 +90,41 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         //Store Serializable audioList to SharedPreferences
         storage?.storeAudio(audioList)
+        storage?.storeAudioListSize(audioList.size)
+
+        checkForNewlyAddedFilesFromStorage()
 
         initUIComponents()
         setBottomSheetDrawerView()
 
         startMediaService()
         setInitialStateOnViews()
+    }
+
+    /**
+     * Check For Newly Added Files From Storage
+     */
+    private fun checkForNewlyAddedFilesFromStorage(){
+        val musicAsyncObj = MusicContentProvider(WeakReference(applicationContext),object : OnAudioResourcesReadyListener{
+            override fun resourcesList(musicContentList: ArrayList<MusicContent>?) {
+
+                if(null != musicContentList){
+                    if(musicContentList.size > storage!!.loadAudioListSize()){
+                        storage!!.clearCachedAudioPlaylist()
+                        audioList = musicContentList
+
+                        Collections.sort(audioList) { lhs, rhs -> lhs.title.compareTo(rhs.title) }
+
+                        //Store Serializable audioList to SharedPreferences
+                        storage?.storeAudio(audioList)
+                        storage?.storeAudioListSize(audioList.size)
+
+                        musicAdapter!!.notifyDataSetChanged()
+                    }
+                }
+            }
+        })
+        musicAsyncObj.execute()
     }
 
     // Set Error View For No Audio
@@ -159,24 +184,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         search_view.setSubmitOnClick(true)
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
-    override fun shuffleAction(view: View) {
-        view.isEnabled = false
-
-        audioIndex = playerService?.getRandomAudioFileIndex()!!
-        musicContentObj = audioList[audioIndex]
-
-        playerService?.activeAudio = musicContentObj
-        playerService?.startPlayingMusic()
-        setCurrentMusicDetailsToUI()
-
-        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
-
-        Handler().postDelayed({
-            view.isEnabled = true
-        }, 250)
-    }
-
+    // Set Bottom Sheet Drawer View
     private fun setBottomSheetDrawerView() {
         sheetBehavior = BottomSheetBehavior.from(bottomSheet) as BottomSheetBehavior;
         sheetBehavior.setBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
@@ -210,6 +218,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         })
     }
 
+    // Start Media Service
     private fun startMediaService() {
         val playerIntent = Intent(this, MediaPlayerService::class.java)
         startService(playerIntent)
@@ -241,7 +250,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             }
 
             self.playOnHomeIcon.setImageResource(R.drawable.play_main)
-            self.playButton.setImageResource(R.drawable.ic_play_white)
+            self.playButton.setImageResource(R.drawable.play_big)
 
             self.playingSongName.text = (musicContentObj?.title)
             self.artistName.text = (musicContentObj?.artist)
@@ -271,11 +280,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.placeholder)
+                    .error(R.drawable.musical_note)
                     .override(300, 300)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.placeholder)
+                            self.albumImageView.setImageResource(R.drawable.musical_note)
                             return true
                         }
 
@@ -294,16 +303,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             self.startTimer.text = startTimerText
             self.endTimer.text = musicContentObj?.duration
 
-            self.playOnHomeIcon.tag = if (storage?.loadAudioIconTag() == PlayMeConstants.PAUSE) {
-                null
-            } else {
-                storage?.loadAudioIconTag()
-            }
-            self.playButton.tag = if (storage?.loadAudioIconTag() == PlayMeConstants.PAUSE) {
-                null
-            } else {
-                storage?.loadAudioIconTag()
-            }
+            self.playOnHomeIcon.tag = null
+            self.playButton.tag = null
         }
     }
 
@@ -386,11 +387,12 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.placeholder)
+                    .error(R.drawable.musical_note)
                     .override(300, 300)
+                    .fitCenter()
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.placeholder)
+                            self.albumImageView.setImageResource(R.drawable.musical_note)
                             return true
                         }
 
@@ -415,7 +417,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
 
         if(null != self){
-            self.storage?.storeAudioIndex(self.playerService!!.audioIndex)
+            storage?.storeAudioIndex(playerService!!.audioIndex)
             self.frontSeekBar.progress = 0
             self.detailSeekBar.progress = 0
 
@@ -446,11 +448,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.placeholder)
+                    .error(R.drawable.musical_note)
                     .override(300, 300)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.albumImageView.setImageResource(R.drawable.placeholder)
+                            self.albumImageView.setImageResource(R.drawable.musical_note)
                             return true
                         }
 
@@ -460,7 +462,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         }
                     }).into(self.albumImageView)
 
-            self.playButton.setImageResource(R.drawable.ic_play_white)
+            self.playButton.setImageResource(R.drawable.play_big)
             self.endTimer.text = musicContentObj?.duration
         }
     }
@@ -470,8 +472,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         //Store Serializable audioList to SharedPreferences
         storage?.storeAudioIndex(audioIndex)
-        storage?.storeAvailable(false)
-        storage?.storeAudioTotalTime(endTimer.text.toString())
 
         //Check is service is active
         if (!serviceBound) {
@@ -496,7 +496,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             val self = weakSelf.get()
 
             if (null != self) {
-                val mediaPlayer = self.playerService?.mediaPlayer
+                val mediaPlayer = playerService?.mediaPlayer
 
                 if (null != mediaPlayer) { // Updating progress bar
                     val totalDuration = mediaPlayer.duration
@@ -508,82 +508,14 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     self.frontSeekBar.progress = progress
                     self.detailSeekBar.progress = progress
 
-                    self.storage?.storeAudioProgress(progress)
-                    self.storage?.storeAudioCurrentSeekPosition(currentDuration)
-                    self.storage?.storeAudioCurrentTime(startTimer.text.toString())
+                    storage?.storeAudioProgress(progress)
+                    storage?.storeAudioCurrentSeekPosition(currentDuration)
+                    storage?.storeAudioCurrentTime(startTimer.text.toString())
                 }
             }
 
             // Running this thread after 100 milliseconds
             mHandler.postDelayed(this, 100)
-        }
-    }
-
-    override fun onQueryTextSubmit(query: String?): Boolean {
-        hideKeyboard()
-        val self = weakSelf.get()
-
-        var isFound = false
-        if (null != query) {
-            for (i in 0 until audioList.size) {
-                val musicContent: MusicContent = audioList[i]
-                if (musicContent.title.contentEquals(query)) {
-                    isFound = true
-                    audioIndex = i;
-                    break
-                }
-            }
-        }
-
-        if (!isFound) {
-            Toast.makeText(applicationContext, "No Such Song Available", Toast.LENGTH_SHORT).show()
-        } else {
-            musicContentObj = audioList[audioIndex]
-
-            setCurrentMusicDetailsToUI()
-            playAudio(audioIndex)
-
-            if (null != self) {
-                BottomSheetBehavior.from(self.bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED)
-                self.storage?.storeAudioIndex(audioIndex)
-                self.playerService?.activeAudio = musicContentObj
-                self.playerService?.startPlayingMusic()
-            }
-        }
-        return false
-    }
-
-    private fun hideKeyboard() {
-        val imm = applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(this.window.decorView.windowToken, 0)
-    }
-
-    override fun onQueryTextChange(newText: String?): Boolean {
-        return false
-    }
-
-    override fun onSearchViewClosed() {
-    }
-
-    override fun onSearchViewShown() {
-        val self = weakSelf.get()
-
-        val audioNameList: ArrayList<String> = arrayListOf()
-        for (i in 0 until audioList.size) {
-            val musicContent: MusicContent = audioList[i]
-            audioNameList.add(musicContent.title)
-        }
-
-        if (null != self) {
-            self.search_view.setSuggestions(audioNameList.toTypedArray());
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        val self = weakSelf.get()
-
-        if (null != self) {
-            BottomSheetBehavior.from(self.bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED)
         }
     }
 
@@ -618,15 +550,30 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     }
 
     @TargetApi(Build.VERSION_CODES.M)
+    override fun shuffleAction(view: View) {
+        view.isEnabled = false
+
+        audioIndex = playerService?.getRandomAudioFileIndex()!!
+        musicContentObj = audioList[audioIndex]
+        playerService?.activeAudio = musicContentObj
+        playAudio(audioIndex)
+        setCurrentMusicDetailsToUI()
+
+        Handler().postDelayed({
+            view.isEnabled = true
+        }, 200)
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
     private fun repeatAllIconAction() {
         val self = weakSelf.get()
 
         if (null != self) {
-            if (!self.storage?.loadAudioIsRepeatOne()!!) {
-                self.storage?.storeAudioRepeatOne(true)
+            if (!storage?.loadAudioIsRepeatOne()!!) {
+                storage?.storeAudioRepeatOne(true)
                 self.repeatIcon.setImageResource(R.drawable.repeat_one)
             } else {
-                self.storage?.storeAudioRepeatOne(false)
+                storage?.storeAudioRepeatOne(false)
                 self.repeatIcon.setImageResource(R.drawable.infinite_loop)
             }
         }
@@ -637,11 +584,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
 
         if (null != self) {
-            if (self.storage?.loadAudioShuffledState()!!) {
-                self.storage?.storeAudioShuffle(false)
+            if (storage?.loadAudioShuffledState()!!) {
+                storage?.storeAudioShuffle(false)
                 self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.hintColor))
             } else {
-                self.storage?.storeAudioShuffle(true)
+                storage?.storeAudioShuffle(true)
                 self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
             }
         }
@@ -649,25 +596,19 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
     // Previous Icon Action
     private fun previousIconAction() {
-        val self = weakSelf.get()
-
-        if (null != self) {
-            if (self.playerService?.mediaPlayer != null) {
-                musicContentObj = self.playerService?.currentAudioDetails()
-                self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PREVIOUS))
-            }
+        if (playerService != null) {
+            musicContentObj = playerService!!.currentAudioDetails()
+            playerService!!.handleIncomingActions(Intent(playerService!!.ACTION_PREVIOUS))
+            setCurrentMusicDetailsToUI()
         }
     }
 
     // Next Icon Action
     private fun nextIconAction() {
-        val self = weakSelf.get()
-
-        if (null != self) {
-            if (self.playerService?.mediaPlayer != null) {
-                musicContentObj = self.playerService?.currentAudioDetails()
-                self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_NEXT))
-            }
+        if (playerService != null) {
+            musicContentObj = playerService!!.currentAudioDetails()
+            playerService!!.handleIncomingActions(Intent(playerService!!.ACTION_NEXT))
+            setCurrentMusicDetailsToUI()
         }
     }
 
@@ -676,7 +617,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         val self = weakSelf.get()
         if (null != self) {
-            val musicPlayer = self.playerService?.mediaPlayer
+            val musicPlayer = playerService?.mediaPlayer
             if (null != musicPlayer) {
                 val tag = view.tag
                 when (tag) {
@@ -685,27 +626,28 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playButton.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.handleIncomingActions(Intent(self.playerService?.ACTION_PLAY))
+                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
                     }
                     PlayMeConstants.PAUSE -> {
                         self.playOnHomeIcon.setImageResource(R.drawable.play_main)
-                        self.playButton.setImageResource(R.drawable.ic_play_white)
+                        self.playButton.setImageResource(R.drawable.play_big)
                         self.playButton.tag = PlayMeConstants.PLAYING
                         self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
-                        self.playerService?.handleIncomingActions(Intent(self.playerService?.ACTION_PAUSE))
+                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
                     }
                     else -> {
                         self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
                         self.playButton.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
+                        storage?.storeAvailable(false)
+                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
 
                         if (storage?.loadAudioSeekPosition() != 0) {
-                            self.playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
-                            self.playerService?.resumeMediaPlayerWhereUserLeft()
+                            playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
+                            playerService?.resumeMediaPlayerWhereUserLeft()
                         } else {
-                            self.playerService?.startPlayingMusic()
+                            playerService?.startPlayingMusic()
                         }
                     }
                 }
@@ -719,7 +661,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
 
         if (null != self) {
-            val musicPlayer = self.playerService?.mediaPlayer
+            val musicPlayer = playerService?.mediaPlayer
             if (null != musicPlayer) {
                 val tag = view.tag
                 when (tag) {
@@ -728,27 +670,28 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playButton.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
+                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
                     }
                     PlayMeConstants.PAUSE -> {
                         self.playOnHomeIcon.setImageResource(R.drawable.play_main)
-                        self.playButton.setImageResource(R.drawable.ic_play_white)
+                        self.playButton.setImageResource(R.drawable.play_big)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
+                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
                     }
                     else -> {
                         self.playButton.setImageResource(R.drawable.pause_main)
                         self.playOnHomeIcon.setImageResource(R.drawable.pause)
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        self.playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
+                        storage?.storeAvailable(false)
+                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
 
                         if (storage?.loadAudioSeekPosition() != 0) {
-                            self.playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
-                            self.playerService?.resumeMediaPlayerWhereUserLeft()
+                            playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
+                            playerService?.resumeMediaPlayerWhereUserLeft()
                         } else {
-                            self.playerService?.startPlayingMusic()
+                            playerService?.startPlayingMusic()
                         }
                     }
                 }
@@ -771,7 +714,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
             } else {
                 self.playOnHomeIcon.setImageResource(R.drawable.play_main)
-                self.playButton.setImageResource(R.drawable.ic_play_white)
+                self.playButton.setImageResource(R.drawable.play_big)
                 self.playButton.tag = PlayMeConstants.PLAYING
                 self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
             }
@@ -785,6 +728,37 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         if (null != self) {
             BottomSheetBehavior.from(self.bottomSheet).state = (BottomSheetBehavior.STATE_COLLAPSED);
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (serviceBound) {
+            unbindService(serviceConnection)
+            // service is active
+            playerService!!.stopSelf()
+        }
+        mHandler.removeCallbacks(mUpdateTimeTask)
+    }
+
+    override fun onPause() {
+        val self = weakSelf.get()
+        if (null != self) {
+            val mediaPlayer = playerService?.mediaPlayer
+            if (null != mediaPlayer) {
+                storage?.storeAudioIndex(audioIndex)
+                storage?.storeAudioCurrentSeekPosition(mediaPlayer.currentPosition)
+                storage?.storeAudioProgress(self.frontSeekBar.progress)
+                storage?.storeAudioCurrentTime(self.startTimer.text.toString())
+            }
+        }
+        super.onPause()
+    }
+
+    override fun onResume() {
+        if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
+            UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
+        }
+        super.onResume()
     }
 
     override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
@@ -828,31 +802,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         serviceBound = savedInstanceState.getBoolean("ServiceState")
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (serviceBound) {
-            serviceConnection
-            unbindService(serviceConnection)
-            // service is active
-            playerService!!.stopSelf()
-        }
-        mHandler.removeCallbacks(mUpdateTimeTask)
-    }
-
-    override fun onPause() {
-        val self = weakSelf.get()
-        if (null != self) {
-            val mediaPlayer = self.playerService?.mediaPlayer
-            if (null != mediaPlayer) {
-                self.storage?.storeAudioIndex(self.playerService!!.audioIndex)
-                self.storage?.storeAudioCurrentSeekPosition(mediaPlayer.currentPosition)
-                self.storage?.storeAudioProgress(self.frontSeekBar.progress)
-                self.storage?.storeAudioCurrentTime(self.startTimer.text.toString())
-            }
-        }
-        super.onPause()
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_base, menu)
@@ -886,6 +835,69 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     super.onBackPressed()
                 }
             }
+        }
+    }
+
+    override fun onQueryTextSubmit(query: String?): Boolean {
+        hideKeyboard()
+
+        var isFound = false
+        if (null != query) {
+            for (i in 0 until audioList.size) {
+                val musicContent: MusicContent = audioList[i]
+                if (musicContent.title.contentEquals(query)) {
+                    isFound = true
+                    audioIndex = i;
+                    break
+                }
+            }
+        }
+
+        if (!isFound) {
+            Toast.makeText(applicationContext, "No Such Song Available", Toast.LENGTH_SHORT).show()
+        }
+        else {
+            musicContentObj = audioList[audioIndex]
+            playerService?.activeAudio = musicContentObj
+            setCurrentMusicDetailsToUI()
+            playAudio(audioIndex)
+
+            BottomSheetBehavior.from(bottomSheet).state = (BottomSheetBehavior.STATE_EXPANDED)
+        }
+        return false
+    }
+
+    private fun  hideKeyboard() {
+        val imm = applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(this.window.decorView.windowToken, 0)
+    }
+
+    override fun onQueryTextChange(newText: String?): Boolean {
+        return false
+    }
+
+    override fun onSearchViewClosed() {
+    }
+
+    override fun onSearchViewShown() {
+        val self = weakSelf.get()
+
+        val audioNameList: ArrayList<String> = arrayListOf()
+        for (i in 0 until audioList.size) {
+            val musicContent: MusicContent = audioList[i]
+            audioNameList.add(musicContent.title)
+        }
+
+        if (null != self) {
+            self.search_view.setSuggestions(audioNameList.toTypedArray());
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        val self = weakSelf.get()
+
+        if (null != self) {
+            BottomSheetBehavior.from(self.bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED)
         }
     }
 }

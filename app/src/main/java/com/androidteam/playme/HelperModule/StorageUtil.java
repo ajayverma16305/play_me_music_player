@@ -14,16 +14,14 @@ import java.util.ArrayList;
  */
 public class StorageUtil {
 
-    private final String STORAGE_AUDIO_ACTIVE = "com.androidteam.playme.STORAGE_ACTIVE";
+    private final String STORAGE_AUDIO_SIZE = "com.androidteam.playme.STORAGE_SIZE";
     private final String STORAGE_AUDIO_AVAILABLE = "com.androidteam.playme.STORAGE_AVAILABLE";
     private final String STORAGE_AUDIO_LIST = "com.androidteam.playme.STORAGE_AUDIO_LIST";
     private final String STORAGE_INDEX = "com.androidteam.playme.STORAGE_INDEX";
     private final String STORAGE_PROGRESS = "com.androidteam.playme.STORAGE_PROGRESS";
     private final String STORAGE_CURRENT_TIME = "com.androidteam.playme.STORAGE_CURRENT_TIME";
-    private final String STORAGE_TOTAL_TIME  = "com.androidteam.playme.STORAGE_TOTAL_TIME";
     private final String STORAGE_SHUFFLE  = "com.androidteam.playme.STORAGE_SHUFFLE";
     private final String STORAGE_REPEAT  = "com.androidteam.playme.STORAGE_REPEAT";
-    private final String STORAGE_TAG  = "com.androidteam.playme.STORAGE_TAG";
     private final String STORAGE_CURRENT_SEEK_POSITION  = "com.androidteam.playme.STORAGE_CURRENT_SEEK_POSITION";
     private SharedPreferences preferences;
     private Context context;
@@ -34,11 +32,17 @@ public class StorageUtil {
 
     public void storeAudio(ArrayList<MusicContent> arrayList) {
         preferences = context.getSharedPreferences(STORAGE_AUDIO_LIST, Context.MODE_PRIVATE);
-
         SharedPreferences.Editor editor = preferences.edit();
         Gson gson = new Gson();
         String json = gson.toJson(arrayList);
         editor.putString("audioArrayList", json);
+        editor.apply();
+    }
+
+    public void storeAudioListSize(int size) {
+        preferences = context.getSharedPreferences(STORAGE_AUDIO_SIZE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt("audioSize", size);
         editor.apply();
     }
 
@@ -86,25 +90,10 @@ public class StorageUtil {
         editor.apply();
     }
 
-    public void storeAudioActive(boolean active) {
-        preferences = context.getSharedPreferences(STORAGE_AUDIO_ACTIVE, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("active", active);
-        editor.apply();
-    }
-
-
     public void storeAudioCurrentTime(String currentTime) {
         preferences = context.getSharedPreferences(STORAGE_CURRENT_TIME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString("audioCurrentTime", currentTime);
-        editor.apply();
-    }
-
-    public void storeAudioTotalTime(String totalTime) {
-        preferences = context.getSharedPreferences(STORAGE_TOTAL_TIME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("audioTotalTime", totalTime);
         editor.apply();
     }
 
@@ -118,28 +107,6 @@ public class StorageUtil {
     public boolean loadAudioIsRepeatOne() {
         preferences = context.getSharedPreferences(STORAGE_REPEAT, Context.MODE_PRIVATE);
         return preferences.getBoolean("audioRepeatOne", false); //return -1 if no data found
-    }
-
-    public boolean loadAudioActive() {
-        preferences = context.getSharedPreferences(STORAGE_AUDIO_ACTIVE, Context.MODE_PRIVATE);
-        return preferences.getBoolean("active", false); //return -1 if no data found
-    }
-
-    public void storeAudioIconTag(String tag) {
-        preferences = context.getSharedPreferences(STORAGE_TAG, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("audioIconTag", tag);
-        editor.apply();
-    }
-
-    public String loadAudioIconTag() {
-        preferences = context.getSharedPreferences(STORAGE_TAG, Context.MODE_PRIVATE);
-        return preferences.getString("audioIconTag", "pause"); //return -1 if no data found
-    }
-
-    public String loadAudioTotalTime() {
-        preferences = context.getSharedPreferences(STORAGE_TOTAL_TIME, Context.MODE_PRIVATE);
-        return preferences.getString("audioTotalTime", "00:00"); //return -1 if no data found
     }
 
     public String loadAudioCurrentTime() {
@@ -160,6 +127,11 @@ public class StorageUtil {
     public int loadAudioProgress() {
         preferences = context.getSharedPreferences(STORAGE_PROGRESS, Context.MODE_PRIVATE);
         return preferences.getInt("audioProgress", 0);//return -1 if no data found
+    }
+
+    public int loadAudioListSize() {
+        preferences = context.getSharedPreferences(STORAGE_AUDIO_SIZE, Context.MODE_PRIVATE);
+        return preferences.getInt("audioSize", 0);//return -1 if no data found
     }
 
     public int loadAudioSeekPosition() {

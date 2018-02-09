@@ -1,9 +1,7 @@
 package com.androidteam.playme.SplashModule
 
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.AsyncTask
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
@@ -11,6 +9,7 @@ import android.view.View
 import com.androidteam.playme.HelperModule.PlayMeConstants
 import com.androidteam.playme.HelperModule.PermissionManager
 import com.androidteam.playme.HelperModule.StorageUtil
+import com.androidteam.playme.Listeners.OnAudioResourcesReadyListener
 import com.androidteam.playme.MainModule.baseModule.BaseActivity
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.MusicProvider.MusicContentProvider
@@ -22,10 +21,6 @@ import java.util.HashMap
 class LaunchScreenActivity : AppCompatActivity() {
 
     private var weakSelf : WeakReference<LaunchScreenActivity> = WeakReference(this)
-
-    private interface OnAudioResourcesListReadyListener {
-        fun resourcesList(musicContentList: ArrayList<MusicContent>?)
-    }
 
     companion object {
         var audioList = ArrayList<MusicContent>()
@@ -42,18 +37,29 @@ class LaunchScreenActivity : AppCompatActivity() {
 
     // Start Quering Music List From Storage
     private fun startQueringMusicListFromStorage() {
+        val storageUtil = StorageUtil(applicationContext)
+        if(storageUtil.loadAudioListSize() > 0) {
+            showMainScreen(storageUtil.loadAudio())
+        } else {
+            executeMusicFilesFromStorage()
+        }
+    }
+
+    /**
+     * Execute Music Files From Storage
+     */
+    private fun executeMusicFilesFromStorage() {
         val self = weakSelf.get()
 
         if (null != self) {
             self.loader.visibility = View.VISIBLE
         }
 
-        val musicAsyncObj = AudioRetrieverAsync(WeakReference(applicationContext), object : OnAudioResourcesListReadyListener {
+        val musicAsyncObj = MusicContentProvider(WeakReference(applicationContext),object : OnAudioResourcesReadyListener{
             override fun resourcesList(musicContentList: ArrayList<MusicContent>?) {
                 if (null != self) {
                     self.loader.visibility = View.GONE
                 }
-
                 showMainScreen(musicContentList)
             }
         })
@@ -62,7 +68,6 @@ class LaunchScreenActivity : AppCompatActivity() {
 
     /**
      * Async class to get all music list from Storage
-     */
     private class AudioRetrieverAsync(val selfWeak : WeakReference<Context>, private val audioResourceReadyListener
                     : OnAudioResourcesListReadyListener) : AsyncTask<Void, Void, ArrayList<MusicContent>?>() {
 
@@ -73,7 +78,7 @@ class LaunchScreenActivity : AppCompatActivity() {
         override fun onPostExecute(result: ArrayList<MusicContent>?) {
             audioResourceReadyListener.resourcesList(result)
         }
-    }
+    }*/
 
     /**
      * Show Main Screen
