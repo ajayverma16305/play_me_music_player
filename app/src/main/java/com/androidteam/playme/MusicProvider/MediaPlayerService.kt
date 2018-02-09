@@ -125,6 +125,8 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         }
 
         if (mediaSessionManager == null) {
+            buildNotification(PlaybackStatus.PAUSED)
+
             try {
                 initMediaSession()
                 initMediaPlayer()
@@ -229,17 +231,16 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
         if(storageUtil!!.loadAudioIsRepeatOne()){
             activeAudio = audioList[audioIndex]
-            stopMedia()
-
-            //reset mediaPlayer
-            mediaPlayer!!.reset()
             startPlayingMusic()
         }
         else {
             if (!storageUtil!!.loadAudioShuffledState()) {
-                mediaPlayer?.reset()
                 if(storageUtil!!.loadAvailable()){
                     skipToNext()
+                }
+                else {
+                    activeAudio = audioList[audioIndex]
+                    mediaPlayer?.reset()
                     startPlayingMusic()
                 }
             }
@@ -251,10 +252,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         updateMainUIOnFromNotificationStatus()
     }
 
-            Timber.d(e.message)
-            audioIndex = 0
-        }
-        return audioIndex
     // Handle errors
     override fun onError(mp: MediaPlayer, what: Int, extra: Int): Boolean {
 
