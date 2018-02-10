@@ -206,12 +206,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
                 if (slideOffset > 0.2) {
                     playLayout.visibility = View.GONE
-                    view.visibility = View.GONE
                     closeLayout.visibility = View.VISIBLE
 
                 } else if (slideOffset < 0.1) {
                     playLayout.visibility = View.VISIBLE
-                    view.visibility = View.VISIBLE
                     closeLayout.visibility = View.GONE
                 }
             }
@@ -238,7 +236,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             if (storage?.loadAudioIsRepeatOne()!!) {
                 self.repeatIcon.setImageResource(R.drawable.repeat_one)
             } else {
-                self.repeatIcon.setImageResource(R.drawable.infinite_loop)
+                self.repeatIcon.setImageResource(R.drawable.repeat_all)
             }
 
             // last audio index
@@ -265,7 +263,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
                     .error(R.drawable.playme_app_logo)
-                    .override(60, 60)
+                    .override(100, 100)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
                             self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
@@ -357,7 +355,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
                     .error(R.drawable.playme_app_logo)
-                    .override(60, 60)
+                    .override(100, 100)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
                             self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
@@ -745,7 +743,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         if (null != self) {
             val mediaPlayer = playerService?.mediaPlayer
             if (null != mediaPlayer) {
-                storage?.storeAudioIndex(audioIndex)
+                storage?.storeAudioIndex(playerService!!.audioIndex)
                 storage?.storeAudioCurrentSeekPosition(mediaPlayer.currentPosition)
                 storage?.storeAudioProgress(self.frontSeekBar.progress)
                 storage?.storeAudioCurrentTime(self.startTimer.text.toString())

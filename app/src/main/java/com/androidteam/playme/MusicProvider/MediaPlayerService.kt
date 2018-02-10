@@ -235,14 +235,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         }
         else {
             if (!storageUtil!!.loadAudioShuffledState()) {
-                if(storageUtil!!.loadAvailable()){
-                    skipToNext()
-                }
-                else {
-                    activeAudio = audioList[audioIndex]
-                    mediaPlayer?.reset()
-                    startPlayingMusic()
-                }
+                skipToNext()
             }
             else {
                 activeAudio = audioList[getRandomAudioFileIndex()]
@@ -512,8 +505,10 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 when (state) {
                 //if at least one call exists or the phone is ringing
                 //pause the MediaPlayer
-                    TelephonyManager.CALL_STATE_OFFHOOK, TelephonyManager.CALL_STATE_RINGING -> if (mediaPlayer != null) {
+                    TelephonyManager.CALL_STATE_OFFHOOK, TelephonyManager.CALL_STATE_RINGING ->
+                        if (mediaPlayer != null) {
                         pauseMedia()
+                        updateIconOnMainUI(PlaybackStatus.PAUSED)
                         ongoingCall = true
                     }
                     TelephonyManager.CALL_STATE_IDLE ->
@@ -522,6 +517,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                             if (ongoingCall) {
                                 ongoingCall = false
                                 resumeMedia()
+                                updateIconOnMainUI(PlaybackStatus.PLAYING)
                             }
                         }
                 }
@@ -544,6 +540,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 }
                 else if (!mediaPlayer!!.isPlaying) mediaPlayer!!.start()
                 mediaPlayer!!.setVolume(1.0f, 1.0f)
+                updateIconOnMainUI(PlaybackStatus.PLAYING)
             }
             AudioManager.AUDIOFOCUS_LOSS -> {
                 // Lost focus for an unbounded amount of time: stop playback and release media player
@@ -555,7 +552,10 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 // Lost focus for a short time, but we have to stop
                 // playback. We don't release the media player because playback
                 // is likely to resume
-                if (mediaPlayer!!.isPlaying) mediaPlayer!!.pause()
+                if (mediaPlayer!!.isPlaying) {
+                    mediaPlayer!!.pause()
+                    updateIconOnMainUI(PlaybackStatus.PAUSED)
+                }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ->
                 // Lost focus for a short time, but it's ok to keep playing
                 // at an attenuated level
