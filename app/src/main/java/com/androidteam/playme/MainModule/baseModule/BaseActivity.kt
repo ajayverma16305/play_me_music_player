@@ -14,8 +14,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.content.res.ColorStateList
-import android.media.audiofx.Equalizer
-import android.media.audiofx.Visualizer
 import android.os.*
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.LinearLayoutManager
@@ -58,7 +56,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     private var storage: StorageUtil? = null
     private val utils: TimeUtilities = TimeUtilities()
     private var weakSelf: WeakReference<BaseActivity> = WeakReference(this)
-    private val musicAdapter : MusicAdapter? = null
+    private var musicAdapter : MusicAdapter? = null
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,8 +121,13 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         storage?.storeAudio(audioList)
                         storage?.storeAudioListSize(audioList.size)
 
-                        playerService!!.mediaPlayer!!.reset()
-                        musicAdapter!!.notifyDataSetChanged()
+                        if (null != playerService!!.mediaPlayer) {
+                            playerService!!.mediaPlayer!!.reset()
+                        }
+                        if (null != musicAdapter) {
+                            musicAdapter!!.songsList = audioList
+                            musicAdapter!!.notifyDataSetChanged()
+                        }
                     }
                 }
             }
@@ -166,10 +169,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             self.closeSongName.isSelected = true
         }
 
-        val musicAdapter = MusicAdapter(this, audioList)
+        musicAdapter = MusicAdapter(this, audioList)
         music_recycler_view.adapter = musicAdapter
-        musicAdapter.setSongClickedListener(this)
-        musicAdapter.setOnShuffleIconClickListener(this)
+        musicAdapter!!.setSongClickedListener(this)
+        musicAdapter!!.setOnShuffleIconClickListener(this)
         fastscroll.setRecyclerView(music_recycler_view)
 
         playLayout.setOnClickListener(this)
@@ -221,12 +224,12 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     closeLayout.visibility = View.GONE
 
                     val fragment = supportFragmentManager.findFragmentByTag("info")
-                    val equalizer = supportFragmentManager.findFragmentByTag("equalizer")
-                    if (fragment != null || null != equalizer) {
+                    val equalizerFragment = supportFragmentManager.findFragmentByTag("equalizer")
+                    if (fragment != null || null != equalizerFragment) {
                         if(fragment != null) {
                             supportFragmentManager.beginTransaction().remove(fragment).commit()
-                        } else {
-                            supportFragmentManager.beginTransaction().remove(equalizer).commit()
+                        } else if (equalizerFragment != null) {
+                            supportFragmentManager.beginTransaction().remove(equalizerFragment).commit()
                         }
                     }
                 }
@@ -264,6 +267,12 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             if (audioList.size > 0) {
                 musicContentObj = audioList[audioIndex]
             }
+
+            if(audioIndex <= audioList.size ){
+                music_recycler_view.smoothScrollToPosition(audioIndex)
+            }
+
+            self.setCurrentFileIndex()
 
             self.playOnHomeIcon.setImageResource(R.drawable.play_main)
             self.playButton.setImageResource(R.drawable.play_big)
@@ -321,8 +330,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             self.playOnHomeIcon.tag = null
             self.playButton.tag = null
-
-            self.totalTrack.text = ("" + (audioIndex + 1) + "/" + audioList.size)
         }
     }
 
@@ -364,11 +371,19 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         playAudio(position)
     }
 
+    private fun setCurrentFileIndex(){
+        Handler().postDelayed(Runnable {
+            totalTrack.text = ("" + (storage!!.loadAudioIndex() + 1).toInt() + "/" + audioList.size)
+        },200)
+    }
+
     // Set Current Music Details To UI
     private fun setCurrentMusicDetailsToUI() {
         val self = weakSelf.get()
 
         if (null != self) {
+            self.updateEqualizerView()
+            self.setCurrentFileIndex()
             self.playingSongName.text = (musicContentObj?.title)
             self.artistName.text = (musicContentObj?.artist)
 
@@ -422,7 +437,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             self.playButton.setImageResource(R.drawable.pause)
             self.endTimer.text = musicContentObj?.duration
-            self.totalTrack.text = ("" + (audioIndex + 1) + "/" + audioList.size)
         }
     }
 
@@ -437,6 +451,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         if(null != self){
             storage?.storeAudioIndex(playerService!!.audioIndex)
+            self.setCurrentFileIndex()
             self.frontSeekBar.progress = 0
             self.detailSeekBar.progress = 0
 
@@ -483,7 +498,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             self.playButton.setImageResource(R.drawable.play_big)
             self.endTimer.text = musicContentObj?.duration
-            self.totalTrack.text = ("" + (audioIndex + 1) + "/" + audioList.size)
         }
     }
 
@@ -690,8 +704,15 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     }
                 }
                 updateProgressBar()
+                updateEqualizerView()
             }
         }
+    }
+
+    private fun updateEqualizerView(){
+        Handler().postDelayed(Runnable {
+            musicAdapter!!.updatePositionForEqualizer(storage!!.loadAudioIndex())
+        },200)
     }
 
     @TargetApi(Build.VERSION_CODES.O)
@@ -734,6 +755,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     }
                 }
                 updateProgressBar()
+                updateEqualizerView()
             }
         }
     }
@@ -758,8 +780,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
     }
-
-
 
     private fun initializeAudioEX(){
         val equalizer = EqualizerFragment()
@@ -887,7 +907,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
                 if(infoFragment != null) {
                     supportFragmentManager.beginTransaction().remove(infoFragment).commit()
-                } else {
+                } else if(equalizerFragment != null){
                     supportFragmentManager.beginTransaction().remove(equalizerFragment).commit()
                 }
             }

@@ -70,6 +70,7 @@ dependencies {
 
     // GSON library
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.7', changing: true
+
     // Fast Scroller Recycler View
     implementation "com.futuremind.recyclerfastscroll:fastscroll:$fastScrollerRecyclerViewVersion"
 }

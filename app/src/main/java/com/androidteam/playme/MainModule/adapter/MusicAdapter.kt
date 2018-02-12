@@ -7,8 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.androidteam.playme.HelperModule.MiniEqualizer
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.Listeners.OnAudioPickedListener
+import com.androidteam.playme.Listeners.OnEqualizerViewUpdatedListener
 import com.androidteam.playme.R
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.GlideDrawable
@@ -22,17 +24,23 @@ import timber.log.Timber
  * Created by AJAY VERMA on 24/04/15.
  * Company : CACAO SOLUTIONS
  */
-class MusicAdapter(val context : Context,private val songsList: List<MusicContent>) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
-        SectionTitleProvider{
+class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+        SectionTitleProvider ,OnEqualizerViewUpdatedListener{
 
     private var audioPickedListener: OnAudioPickedListener? = null
     private val TYPE_HEADER = 0
     private val TYPE_ITEM = 1
+    private var currentPosition = -1
+    var currentEqualizer : MiniEqualizer? = null
 
     interface OnShuffleIconClickListener{
         fun shuffleAction(view: View)
     }
     var shuffleClickListener : OnShuffleIconClickListener? = null
+
+    override fun updatePositionForEqualizer(position: Int) {
+        updateCurrentPositionForEqualizer(position)
+    }
 
     fun setOnShuffleIconClickListener(shuffleClickListener : OnShuffleIconClickListener){
         this.shuffleClickListener = shuffleClickListener
@@ -61,42 +69,79 @@ class MusicAdapter(val context : Context,private val songsList: List<MusicConten
         }
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (holder.itemViewType == TYPE_ITEM) {
-            val songObject = songsList[position - 1]
-            val itemHolder = holder as ItemHolder
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) =
+            if (holder.itemViewType == TYPE_ITEM) {
+                val lPosition = position - 1
+                val songObject = songsList[lPosition]
+                val itemHolder = holder as ItemHolder
+                currentEqualizer = itemHolder.equalizer_view
 
-            Glide.with(context)
-                    .load(songObject.cover)
-                    .error(R.drawable.playme_app_logo)
-                    .override(60,60)
-                    .listener(object : RequestListener<String, GlideDrawable>{
-                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
-                            return true
-                        }
+                Glide.with(context)
+                        .load(songObject.cover)
+                        .error(R.drawable.playme_app_logo)
+                        .override(100,100)
+                        .listener(object : RequestListener<String, GlideDrawable>{
+                            override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                                itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
+                                return true
+                            }
 
-                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
-                            Timber.d("Resource Ready")
-                            return false
-                        }
-                    }).into(itemHolder.mCoverView)
+                            override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                                Timber.d("Resource Ready")
+                                return false
+                            }
+                        }).into(itemHolder.mCoverView)
 
-            itemHolder.mTitleView.text = songObject.title
-            itemHolder.mArtistView.text = songObject.artist
-            itemHolder.mDurationView.text = songObject.duration
+                itemHolder.mTitleView.text = songObject.title
+                itemHolder.mArtistView.text = songObject.artist
+                itemHolder.mDurationView.text = songObject.duration
 
-            itemHolder.cardView.setOnClickListener {
-                if (null != audioPickedListener) {
-                    audioPickedListener!!.audioPicked(songObject,position - 1)
+                updateCurrentEqualizerView(lPosition,itemHolder)
+
+                itemHolder.cardView.setOnClickListener {
+                    updateCurrentPositionForEqualizer(lPosition)
+
+                    if(currentPosition != -1){
+                        currentEqualizer!!.visibility = View.VISIBLE
+                        currentEqualizer!!.animateBars()
+                    }
+
+                    if (null != audioPickedListener) {
+                        audioPickedListener!!.audioPicked(songObject,lPosition)
+                    }
+                }
+            } else {
+                val headerView = holder as HeaderViewHolder
+                headerView.mHeaderShuffleTextView.setOnClickListener{
+                    if(null != shuffleClickListener){
+                        shuffleClickListener!!.shuffleAction(headerView.mHeaderShuffleTextView)
+                    }
                 }
             }
+
+    private fun updateCurrentPositionForEqualizer(lPosition: Int) {
+        if (currentPosition == lPosition) {
+            currentPosition = -1
         } else {
-            val headerView = holder as HeaderViewHolder
-            headerView.mHeaderShuffleTextView.setOnClickListener{
-                if(null != shuffleClickListener){
-                    shuffleClickListener!!.shuffleAction(headerView.mHeaderShuffleTextView)
-                }
+            notifyItemChanged(currentPosition)
+            currentPosition = lPosition
+        }
+        notifyItemChanged(lPosition)
+    }
+
+    private fun updateCurrentEqualizerView(lPosition : Int,itemHolder : ItemHolder){
+        if (currentPosition == lPosition) {
+            if(!currentEqualizer!!.isAnimating){
+                currentEqualizer!!.visibility = View.VISIBLE
+                currentEqualizer!!.animateBars()
+                itemHolder.mCoverView.alpha = .5f
+            }
+        }
+        else {
+            itemHolder.mCoverView.alpha = 1f
+            currentEqualizer!!.visibility = View.GONE
+            if(currentEqualizer!!.isAnimating){
+                currentEqualizer!!.stopBars()
             }
         }
     }
@@ -111,6 +156,7 @@ class MusicAdapter(val context : Context,private val songsList: List<MusicConten
         val mArtistView : TextView = mView.findViewById(R.id.artist)
         val mDurationView : TextView = mView.findViewById(R.id.duration)
         val cardView : LinearLayout = mView.findViewById(R.id.card_view)
+        var equalizer_view = mView.findViewById<MiniEqualizer>(R.id.equalizer_view)
     }
 
     override fun getItemViewType(position: Int): Int {
