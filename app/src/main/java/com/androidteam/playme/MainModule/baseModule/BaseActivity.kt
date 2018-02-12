@@ -14,12 +14,16 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.content.res.ColorStateList
+import android.media.audiofx.Equalizer
+import android.media.audiofx.Visualizer
 import android.os.*
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.LinearLayoutManager
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import com.androidteam.playme.Fragments.CurrentSongInfoFragment
+import com.androidteam.playme.Fragments.EqualizerFragment
 import com.androidteam.playme.HelperModule.*
 import com.androidteam.playme.Listeners.OnAudioResourcesReadyListener
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
@@ -109,7 +113,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             override fun resourcesList(musicContentList: ArrayList<MusicContent>?) {
 
                 if(null != musicContentList){
-                    if(musicContentList.size > storage!!.loadAudioListSize()){
+                    if(musicContentList.size != storage!!.loadAudioListSize()){
                         storage!!.clearCachedAudioPlaylist()
                         audioList = musicContentList
 
@@ -119,6 +123,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         storage?.storeAudio(audioList)
                         storage?.storeAudioListSize(audioList.size)
 
+                        playerService!!.mediaPlayer!!.reset()
                         musicAdapter!!.notifyDataSetChanged()
                     }
                 }
@@ -175,6 +180,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         repeatIcon.setOnClickListener(this)
         playButton.setOnClickListener(this)
         shuffle.setOnClickListener(this)
+        infoAction.setOnClickListener(this)
+        equalizerAction.setOnClickListener(this)
         detailSeekBar.setOnSeekBarChangeListener(this)
 
         search_view.setOnQueryTextListener(this)
@@ -204,6 +211,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             }
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
+
                 if (slideOffset > 0.2) {
                     playLayout.visibility = View.GONE
                     closeLayout.visibility = View.VISIBLE
@@ -211,6 +219,16 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 } else if (slideOffset < 0.1) {
                     playLayout.visibility = View.VISIBLE
                     closeLayout.visibility = View.GONE
+
+                    val fragment = supportFragmentManager.findFragmentByTag("info")
+                    val equalizer = supportFragmentManager.findFragmentByTag("equalizer")
+                    if (fragment != null || null != equalizer) {
+                        if(fragment != null) {
+                            supportFragmentManager.beginTransaction().remove(fragment).commit()
+                        } else {
+                            supportFragmentManager.beginTransaction().remove(equalizer).commit()
+                        }
+                    }
                 }
             }
         })
@@ -303,6 +321,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             self.playOnHomeIcon.tag = null
             self.playButton.tag = null
+
+            self.totalTrack.text = ("" + (audioIndex + 1) + "/" + audioList.size)
         }
     }
 
@@ -402,6 +422,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             self.playButton.setImageResource(R.drawable.pause)
             self.endTimer.text = musicContentObj?.duration
+            self.totalTrack.text = ("" + (audioIndex + 1) + "/" + audioList.size)
         }
     }
 
@@ -462,6 +483,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             self.playButton.setImageResource(R.drawable.play_big)
             self.endTimer.text = musicContentObj?.duration
+            self.totalTrack.text = ("" + (audioIndex + 1) + "/" + audioList.size)
         }
     }
 
@@ -544,7 +566,25 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             R.id.shuffle -> {
                 shuffleIconAction()
             }
+            R.id.infoAction -> {
+                showCurrentInfo()
+            }
+            R.id.equalizerAction -> {
+                initializeAudioEX()
+            }
         }
+    }
+
+    // Show Current Info
+    private fun showCurrentInfo() {
+        val currentSongInfoFragment = CurrentSongInfoFragment()
+
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right,android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+        transaction.add(R.id.infoFrameLayout, currentSongInfoFragment,"info")
+        currentSongInfoFragment.setActiveMusicContentInfo(audioList[playerService!!.audioIndex])
+        transaction.addToBackStack("CurrentSongInfoFragment")
+        transaction.commit()
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -572,7 +612,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 self.repeatIcon.setImageResource(R.drawable.repeat_one)
             } else {
                 storage?.storeAudioRepeatOne(false)
-                self.repeatIcon.setImageResource(R.drawable.infinite_loop)
+                self.repeatIcon.setImageResource(R.drawable.repeat_all)
             }
         }
     }
@@ -719,6 +759,21 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
+
+
+    private fun initializeAudioEX(){
+        val equalizer = EqualizerFragment()
+
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right,android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+        transaction.add(R.id.infoFrameLayout, equalizer,"equalizer")
+        equalizer.setMediaPlayer(playerService!!.mediaPlayer!!)
+        transaction.addToBackStack("EqualizerFragment")
+        transaction.commit()
+
+        Timber.d("log")
+    }
+
     // Close Action
     private fun closeAction() {
         val self = weakSelf.get()
@@ -824,13 +879,27 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
 
         if (null != self) {
-            if (self.search_view.isSearchOpen) {
-                self.search_view.closeSearch()
-            } else {
-                if (BottomSheetBehavior.from(self.bottomSheet).state == (BottomSheetBehavior.STATE_EXPANDED)) {
-                    BottomSheetBehavior.from(self.bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED;
+            val infoFragment = supportFragmentManager.findFragmentByTag("info")
+            val equalizerFragment = supportFragmentManager.findFragmentByTag("equalizer")
+
+            if (infoFragment != null || null != equalizerFragment) {
+                supportFragmentManager.popBackStackImmediate()
+
+                if(infoFragment != null) {
+                    supportFragmentManager.beginTransaction().remove(infoFragment).commit()
                 } else {
-                    super.onBackPressed()
+                    supportFragmentManager.beginTransaction().remove(equalizerFragment).commit()
+                }
+            }
+            else {
+                if (self.search_view.isSearchOpen) {
+                    self.search_view.closeSearch()
+                } else {
+                    if (BottomSheetBehavior.from(self.bottomSheet).state == (BottomSheetBehavior.STATE_EXPANDED)) {
+                        BottomSheetBehavior.from(self.bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED;
+                    } else {
+                        super.onBackPressed()
+                    }
                 }
             }
         }

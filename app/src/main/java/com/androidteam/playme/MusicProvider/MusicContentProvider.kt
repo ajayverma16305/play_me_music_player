@@ -4,8 +4,11 @@ import android.content.Context
 import android.database.Cursor
 import android.os.AsyncTask
 import android.provider.MediaStore
+import android.text.format.DateFormat
 import com.androidteam.playme.Listeners.OnAudioResourcesReadyListener
 import java.lang.ref.WeakReference
+import java.text.DecimalFormat
+import java.util.*
 
 /**
  * Created by AJAY VERMA on 30/01/18.
@@ -33,7 +36,11 @@ class MusicContentProvider(private val selfWeak : WeakReference<Context>,private
             val idColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media._ID)
             val artistColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.ARTIST)
             val songDuration = musicCursor.getColumnIndex(MediaStore.Audio.Media.DURATION)
-            //val data = musicCursor.getString(musicCursor.getColumnIndex(MediaStore.Audio.Media.DATA))
+            val albumName = musicCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM)
+            val dateAdded = musicCursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
+            val dateModified = musicCursor.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
+            val size = musicCursor.getColumnIndex(MediaStore.Audio.Media.SIZE)
+            val numberOfTracks = musicCursor.getColumnIndex(MediaStore.Audio.Albums.NUMBER_OF_SONGS)
 
             do {
                 val albumId = java.lang.Long.valueOf(musicCursor.getString(musicCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)))
@@ -45,6 +52,19 @@ class MusicContentProvider(private val selfWeak : WeakReference<Context>,private
                 val thisId = musicCursor.getLong(idColumn)
                 val thisTitle = musicCursor.getString(titleColumn)
                 val thisArtist = musicCursor.getString(artistColumn)
+                val thisAlbumName = musicCursor.getString(albumName)
+                val thisDateAdded = getDate(musicCursor.getString(dateAdded).toLong())
+                val thisDateModified = getDate(musicCursor.getString(dateModified).toLong())
+
+                var thiNumberOfTracks : String? = null
+                thiNumberOfTracks = if(numberOfTracks != -1){
+                    musicCursor.getString(musicCursor.getColumnIndex(numberOfTracks.toString()))
+                } else {
+                    "0"
+                }
+
+                val sizeInMb : String = getStringSizeLengthFile(musicCursor.getLong(size))
+
                 val duration : Long = musicCursor.getLong(songDuration)
                 var imagePath : String? = null
                 var imageData : String? = null
@@ -62,7 +82,10 @@ class MusicContentProvider(private val selfWeak : WeakReference<Context>,private
                     imageData = ""
                 }
 
-                itemList.add(MusicContent(imagePath, thisId, thisTitle, thisArtist,convertDuration(duration),imageData))
+                itemList.add(MusicContent(imagePath,
+                        thisId, thisTitle, thisArtist, convertDuration(duration),
+                        imageData, thisAlbumName, thisDateAdded, thisDateModified, thiNumberOfTracks!!, sizeInMb))
+
                 cursorAlbum?.close()
 
             } while (musicCursor.moveToNext())
@@ -70,6 +93,32 @@ class MusicContentProvider(private val selfWeak : WeakReference<Context>,private
         }
         musicCursor.close()
         return itemList
+    }
+
+    private fun getDate(time: Long): String {
+        val cal = Calendar.getInstance(Locale.ENGLISH)
+        cal.timeInMillis = (time * 1000)
+        return DateFormat.format("dd-MM-yyyy", cal).toString()
+    }
+
+    private fun getStringSizeLengthFile(size: Long): String {
+
+        val df = DecimalFormat("0.00")
+
+        val sizeKb = 1024.0f
+        val sizeMo = sizeKb * sizeKb
+        val sizeGo = sizeMo * sizeKb
+        val sizeTerra = sizeGo * sizeKb
+
+
+        if (size < sizeMo)
+            return df.format(size / sizeKb) + " KB"
+        else if (size < sizeGo)
+            return df.format(size / sizeMo) + " MB"
+        else if (size < sizeTerra)
+            return df.format(size / sizeGo) + " GB"
+
+        return ""
     }
 
     private fun convertDuration(duration: Long): String {
