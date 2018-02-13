@@ -11,6 +11,7 @@ import com.androidteam.playme.HelperModule.MiniEqualizer
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.Listeners.OnAudioPickedListener
 import com.androidteam.playme.Listeners.OnEqualizerViewUpdatedListener
+import com.androidteam.playme.Listeners.OnMediaStateChangeListener
 import com.androidteam.playme.R
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.GlideDrawable
@@ -28,18 +29,21 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
         SectionTitleProvider ,OnEqualizerViewUpdatedListener{
 
     private var audioPickedListener: OnAudioPickedListener? = null
+    private var musicStateChangeListener : OnMediaStateChangeListener ? = null
     private val TYPE_HEADER = 0
     private val TYPE_ITEM = 1
     private var currentPosition = -1
-    var currentEqualizer : MiniEqualizer? = null
 
     interface OnShuffleIconClickListener{
         fun shuffleAction(view: View)
     }
     var shuffleClickListener : OnShuffleIconClickListener? = null
 
-    override fun updatePositionForEqualizer(position: Int) {
-        updateCurrentPositionForEqualizer(position)
+    override fun updatePositionForEqualizer(position: Int, itemHolder : RecyclerView.ViewHolder) {
+        if(itemHolder is ItemHolder){
+            val holder : ItemHolder = itemHolder
+            updateCurrentPositionForEqualizer(position,holder)
+        }
     }
 
     fun setOnShuffleIconClickListener(shuffleClickListener : OnShuffleIconClickListener){
@@ -48,6 +52,10 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
 
     fun setSongClickedListener(listener: OnAudioPickedListener) {
         audioPickedListener = listener
+    }
+
+    fun setOnMediaStateChangeListener(musicStateChangeListener : OnMediaStateChangeListener) {
+        this.musicStateChangeListener = musicStateChangeListener
     }
 
     override fun getSectionTitle(position: Int): String {
@@ -69,57 +77,56 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
         }
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) =
-            if (holder.itemViewType == TYPE_ITEM) {
-                val lPosition = position - 1
-                val songObject = songsList[lPosition]
-                val itemHolder = holder as ItemHolder
-                currentEqualizer = itemHolder.equalizer_view
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder.itemViewType == TYPE_ITEM) {
+            val lPosition = position - 1
+            val songObject = songsList[lPosition]
+            val itemHolder = holder as ItemHolder
 
-                Glide.with(context)
-                        .load(songObject.cover)
-                        .error(R.drawable.playme_app_logo)
-                        .override(100,100)
-                        .listener(object : RequestListener<String, GlideDrawable>{
-                            override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                                itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
-                                return true
-                            }
+            updateCurrentEqualizerView(lPosition,itemHolder)
 
-                            override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
-                                Timber.d("Resource Ready")
-                                return false
-                            }
-                        }).into(itemHolder.mCoverView)
+            Glide.with(context)
+                    .load(songObject.cover)
+                    .error(R.drawable.playme_app_logo)
+                    .override(100,100)
+                    .listener(object : RequestListener<String, GlideDrawable>{
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
+                            return true
+                        }
 
-                itemHolder.mTitleView.text = songObject.title
-                itemHolder.mArtistView.text = songObject.artist
-                itemHolder.mDurationView.text = songObject.duration
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                            Timber.d("Resource Ready")
+                            return false
+                        }
+                    }).into(itemHolder.mCoverView)
 
-                updateCurrentEqualizerView(lPosition,itemHolder)
+            itemHolder.mTitleView.text = songObject.title
+            itemHolder.mArtistView.text = songObject.artist
+            itemHolder.mDurationView.text = songObject.duration
 
-                itemHolder.cardView.setOnClickListener {
-                    updateCurrentPositionForEqualizer(lPosition)
+            itemHolder.cardView.setOnClickListener {
+                updateCurrentPositionForEqualizer(lPosition,itemHolder)
 
-                    if(currentPosition != -1){
-                        currentEqualizer!!.visibility = View.VISIBLE
-                        currentEqualizer!!.animateBars()
-                    }
-
-                    if (null != audioPickedListener) {
-                        audioPickedListener!!.audioPicked(songObject,lPosition)
-                    }
+                if(null != musicStateChangeListener){
+                    musicStateChangeListener!!.mediaStateChanged(itemHolder.equalizer_view)
                 }
-            } else {
-                val headerView = holder as HeaderViewHolder
-                headerView.mHeaderShuffleTextView.setOnClickListener{
-                    if(null != shuffleClickListener){
-                        shuffleClickListener!!.shuffleAction(headerView.mHeaderShuffleTextView)
-                    }
+
+                if (null != audioPickedListener) {
+                    audioPickedListener!!.audioPicked(songObject,lPosition)
                 }
             }
+        } else {
+            val headerView = holder as HeaderViewHolder
+            headerView.mHeaderShuffleTextView.setOnClickListener{
+                if(null != shuffleClickListener){
+                    shuffleClickListener!!.shuffleAction(headerView.mHeaderShuffleTextView)
+                }
+            }
+        }
+    }
 
-    private fun updateCurrentPositionForEqualizer(lPosition: Int) {
+    private fun updateCurrentPositionForEqualizer(lPosition: Int, itemHolder : ItemHolder) {
         if (currentPosition == lPosition) {
             currentPosition = -1
         } else {
@@ -127,23 +134,39 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
             currentPosition = lPosition
         }
         notifyItemChanged(lPosition)
+
+        if(currentPosition != -1){
+            itemHolder.equalizer_view.visibility = View.VISIBLE
+            itemHolder.equalizer_view.animateBars()
+        }
     }
 
     private fun updateCurrentEqualizerView(lPosition : Int,itemHolder : ItemHolder){
         if (currentPosition == lPosition) {
-            if(!currentEqualizer!!.isAnimating){
-                currentEqualizer!!.visibility = View.VISIBLE
-                currentEqualizer!!.animateBars()
-                itemHolder.mCoverView.alpha = .5f
+            if(!itemHolder.equalizer_view.isAnimating){
+                itemHolder.equalizer_view.visibility = View.VISIBLE
+                itemHolder.equalizer_view.animateBars()
+                itemHolder.mCoverView.alpha = .1f
             }
         }
         else {
             itemHolder.mCoverView.alpha = 1f
-            currentEqualizer!!.visibility = View.GONE
-            if(currentEqualizer!!.isAnimating){
-                currentEqualizer!!.stopBars()
+            itemHolder.equalizer_view.visibility = View.GONE
+            if(itemHolder.equalizer_view.isAnimating){
+                itemHolder.equalizer_view.stopBars()
             }
         }
+    }
+
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder?) {
+        if(holder is ItemHolder){
+            val itemHolder : ItemHolder = holder
+            val lPosition = itemHolder.adapterPosition
+
+            updateCurrentEqualizerView(lPosition,itemHolder)
+        }
+
+        super.onViewRecycled(holder)
     }
 
     private class HeaderViewHolder(mView : View) : RecyclerView.ViewHolder(mView){

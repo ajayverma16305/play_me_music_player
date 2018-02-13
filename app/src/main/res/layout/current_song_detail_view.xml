@@ -26,9 +26,9 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="12dp"
                 android:src="@drawable/ic_close_white_24dp"
-                android:layout_width="30dp"
+                android:layout_width="25dp"
                 android:tint="@color/white"
-                android:layout_height="wrap_content" />
+                android:layout_height="25dp" />
 
             <TextView
                 android:layout_gravity="center_vertical"
@@ -60,16 +60,15 @@
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="220dp">
+                android:layout_height="180dp">
 
                 <ImageView
                     android:id="@+id/songInfoCover"
                     android:layout_width="match_parent"
-                    android:layout_height="220dp"
+                    android:layout_height="180dp"
                     android:adjustViewBounds="true"
-                    android:scaleType="centerCrop"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/placeholder"/>
-
 
                 <TextView
                     android:id="@+id/shareAction"
@@ -82,7 +81,6 @@
                     android:textAppearance="@style/TextAppearance.AppCompat.Title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
-
 
             </RelativeLayout>
 

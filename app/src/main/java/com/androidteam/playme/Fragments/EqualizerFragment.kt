@@ -3,7 +3,6 @@ package com.androidteam.playme.Fragments
 import android.content.res.ColorStateList
 import android.media.MediaPlayer
 import android.media.audiofx.Equalizer
-import android.media.audiofx.Visualizer
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
@@ -13,19 +12,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import com.androidteam.playme.R
-import org.w3c.dom.Text
 import timber.log.Timber
-
 
 /**
  * A simple [Fragment] subclass.
  */
 class EqualizerFragment : Fragment() ,AdapterView.OnItemSelectedListener {
 
-
     private var mediaPlayer : MediaPlayer? = null
     private var mEqualizer : Equalizer? = null
-    private var mVisualizer : Visualizer? = null
+    private var presetSelectedItemPosition = -1
+    private lateinit var seekBarDynamicLayout : LinearLayout
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater!!.inflate(R.layout.equalizer_layout_view,container,false)
@@ -38,7 +35,7 @@ class EqualizerFragment : Fragment() ,AdapterView.OnItemSelectedListener {
 
         val presetSpinner = view!!.findViewById<Spinner>(R.id.presetSpinner)
         val closeEqualizerAction = view.findViewById<ImageView>(R.id.closeEqualizerAction)
-        val seekBarDynamicLayout = view.findViewById<LinearLayout>(R.id.runTimeBands)
+        seekBarDynamicLayout = view.findViewById<LinearLayout>(R.id.runTimeBands)
 
         closeEqualizerAction.setOnClickListener({
             activity.onBackPressed()
@@ -49,25 +46,28 @@ class EqualizerFragment : Fragment() ,AdapterView.OnItemSelectedListener {
 
         val size =  mEqualizer!!.numberOfPresets - 1
         val presetEqualizerNames = ArrayList<String>()
+
         for(i in 0 until size){
             presetEqualizerNames.add(mEqualizer!!.getPresetName(i.toShort()))
         }
 
-        val arrayAdapter = ArrayAdapter<String>(currentInstance, android.R.layout.simple_spinner_item,presetEqualizerNames)
-
-        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        presetSpinner.adapter = arrayAdapter
+        val adapter = object : ArrayAdapter<String>(currentInstance, android.R.layout.simple_spinner_item, android.R.id.text1, presetEqualizerNames) {
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                if (position == 0) {
+                    (view as TextView).setTextColor(ContextCompat.getColor(currentInstance, R.color.hintColor))
+                } else if (position == presetSelectedItemPosition) {
+                    (view as TextView).setTextColor(ContextCompat.getColor(currentInstance, R.color.TextBlueColor))
+                }
+                return super.getDropDownView(position, null, parent)
+            }
+        }
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        presetSpinner.adapter = adapter
         presetSpinner.setSelection(0, true)
         val v = presetSpinner.selectedView
         (v as TextView).setTextColor(color)
         presetSpinner.onItemSelectedListener = this
 
-        /*val equalizerHeaderText = TextView(currentInstance)
-        equalizerHeaderText.text = "Bands"
-        equalizerHeaderText.textSize = 20f
-        equalizerHeaderText.setTextColor(color)
-        equalizerHeaderText.gravity = Gravity.CENTER_HORIZONTAL
-        seekBarDynamicLayout.addView(equalizerHeaderText)*/
 
         val numberOfBands = mEqualizer!!.numberOfBands
         val lowerEqualizerBandLevel = mEqualizer!!.bandLevelRange[0]
@@ -157,8 +157,8 @@ class EqualizerFragment : Fragment() ,AdapterView.OnItemSelectedListener {
         for(i in 0 until numberFrequencyBand){
              val equalizerBandIndex = i.toShort()
 
-            val seekBar = view.findViewById<SeekBar>(equalizerBandIndex.toInt())
-           // seekBar.progress = (mEqualizer!!.getBandLevel((equalizerBandIndex - lowerEqualizerBandLevel).toShort()).toInt())
+            val seekBar = seekBarDynamicLayout.findViewById<SeekBar>(equalizerBandIndex.toInt())
+            seekBar.progress = (mEqualizer!!.getBandLevel((equalizerBandIndex - lowerEqualizerBandLevel).toShort()).toInt())
         }
 
     }

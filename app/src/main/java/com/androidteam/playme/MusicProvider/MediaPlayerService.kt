@@ -27,6 +27,9 @@ import android.widget.Toast
 import com.androidteam.playme.HelperModule.PlayMeConstants
 import com.androidteam.playme.HelperModule.PlaybackStatus
 import com.androidteam.playme.R
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.animation.GlideAnimation
+import com.bumptech.glide.request.target.SimpleTarget
 import timber.log.Timber
 import java.util.*
 
@@ -125,7 +128,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         }
 
         if (mediaSessionManager == null) {
-            buildNotification(PlaybackStatus.PAUSED)
 
             try {
                 initMediaSession()
@@ -135,6 +137,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 Timber.d(e.message)
                 stopSelf()
             }
+            buildNotification(PlaybackStatus.PAUSED)
         }
 
         //Handle Intent action from MediaSession.TransportControls
@@ -251,13 +254,13 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         //Invoked when there has been an error during an asynchronous operation.
         when (what) {
             MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK -> {
-                Log.d("MediaPlayer Error", "MEDIA ERROR NOT VALID FOR PROGRESSIVE PLAYBACK " + extra)
+                Timber.d( "MEDIA ERROR NOT VALID FOR PROGRESSIVE PLAYBACK " + extra)
             }
             MediaPlayer.MEDIA_ERROR_SERVER_DIED -> {
-                Log.d("MediaPlayer Error", "MEDIA ERROR SERVER DIED " + extra)
+                Timber.d( "MEDIA ERROR SERVER DIED " + extra)
             }
             MediaPlayer.MEDIA_ERROR_UNKNOWN -> {
-                Log.d("MediaPlayer Error", "MEDIA ERROR UNKNOWN " + extra)
+                Timber.d( "MEDIA ERROR UNKNOWN " + extra)
             }
         }
         onErrorStateVerified()
@@ -269,14 +272,15 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         try {
             val rand = Random()
             audioIndex = rand.nextInt((audioList.size - 1) - 0 + 1) + 0
-
-            //Update stored index
-            storageUtil?.storeAudioIndex(audioIndex)
         }
         catch (e: Exception) {
             Timber.d(e.message)
             audioIndex = 0
         }
+
+        //Update stored index
+        storageUtil?.storeAudioIndex(audioIndex)
+
         return audioIndex
     }
 
@@ -414,14 +418,34 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
 
     // Update Meta Data
     private fun updateMetaData() {
-        val albumArt = BitmapFactory.decodeResource(resources, R.drawable.playme_app_logo) //replace with medias albumArt
-        // Update the current metadata
-        mediaSession!!.setMetadata(MediaMetadataCompat.Builder()
-                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, albumArt)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, activeAudio?.artist)
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, activeAudio?.cover)
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, activeAudio?.title)
-                .build())
+        if (activeAudio!!.cover.isNotEmpty()) {
+
+            Glide.with(this).load(activeAudio!!.cover)
+                    .asBitmap().into(object : SimpleTarget<Bitmap>() {
+                override fun onResourceReady(resource: Bitmap, glideAnimation: GlideAnimation<in Bitmap>) {
+
+                    // val albumArt = BitmapFactory.decodeResource(resources, R.drawable.placeholder) //replace with medias albumArt
+                    // Update the current metadata
+                    mediaSession!!.setMetadata(MediaMetadataCompat.Builder()
+                            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, resource)
+                            .putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, resource)
+                            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, activeAudio?.artist)
+                            .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, activeAudio?.cover)
+                            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, activeAudio?.title)
+                            .build())
+                }
+            })
+        } else {
+            val albumArt = BitmapFactory.decodeResource(resources, R.drawable.placeholder) //replace with medias albumArt
+            // Update the current metadata
+            mediaSession!!.setMetadata(MediaMetadataCompat.Builder()
+                    .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, albumArt)
+                    .putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, albumArt)
+                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, activeAudio?.artist)
+                    .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, activeAudio?.cover)
+                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, activeAudio?.title)
+                    .build())
+        }
     }
 
     // Skip To Next
@@ -605,7 +629,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     }
 
     // Build Notification for audio detail
-    @RequiresApi(Build.VERSION_CODES.O)
     fun buildNotification(playbackStatus: PlaybackStatus) {
         try {
             var notificationAction = android.R.drawable.ic_media_pause;//needs to be initialized
@@ -622,18 +645,19 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 play_pauseAction = playbackAction(0);
             }
 
-            val largeIcon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.playme_app_logo); //replace with your own image
+            val largeIcon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.placeholder); //replace with your own image
             val notificationManager : NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             // Sets an ID for the notification, so it can be updated.
             val CHANNEL_ID = "PlayMe_Notification"// The id of the channel.
             val name = "PlayMe"// The user-visible name of the channel.
 
+            @RequiresApi(Build.VERSION_CODES.O)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val importance = NotificationManager.IMPORTANCE_NONE
                 val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
                 val notificationChannel = NotificationChannel(CHANNEL_ID,name,importance)
-                notificationChannel.enableLights(true);
+                //notificationChannel.enableLights(true);
                 notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 notificationManager.createNotificationChannel(mChannel);
             }
@@ -643,18 +667,17 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setContentTitle(activeAudio!!.title)
                     .setContentText(activeAudio!!.artist)
                     .setLargeIcon(largeIcon)
-                    .setSmallIcon(android.R.drawable.stat_sys_headset)
+                    .setSmallIcon(R.drawable.not_app_icon)
                     .setStyle(android.support.v7.app.NotificationCompat.MediaStyle()
                             .setShowActionsInCompactView(0, 1, 2)
                             .setMediaSession(mediaSession!!.sessionToken))
-
                     .setColor(resources.getColor(R.color.background))
                     .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
                     .addAction(notificationAction, "pause", play_pauseAction)
                     .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2))
-                    //.setDeleteIntent(playbackAction(4))
+                    .setDeleteIntent(playbackAction(4))
                     .setChannelId(CHANNEL_ID)
-                    .setOngoing(false)
+                    .setOngoing(true)
                     .setOnlyAlertOnce(true)
 
             val contentIntent = PendingIntent.getActivity(this, 0,

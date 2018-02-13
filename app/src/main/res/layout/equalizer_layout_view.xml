@@ -53,17 +53,44 @@
         android:layout_height="0.1dp"
         android:background="@color/lightGray" />
 
-    <TextView
-        android:text="Preset"
-        android:textAllCaps="false"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:layout_gravity="start"
+    <LinearLayout
+        android:id="@+id/enableLayout"
         android:layout_marginTop="24dp"
-        android:layout_marginStart="32dp"
-        android:gravity="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Title"/>
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <TextView
+            android:layout_weight="1"
+            android:text="Preset"
+            android:layout_marginStart="24dp"
+            android:textAllCaps="false"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:layout_gravity="center_vertical"
+            android:gravity="start"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"/>
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/enableSwitch"
+            android:layout_gravity="end|center_vertical"
+            android:layout_weight="1"
+            android:layout_marginEnd="24dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/runTimeBands"
+        android:layout_marginTop="36dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
     <Spinner
         android:popupBackground="@color/colorPrimary"
@@ -82,25 +109,5 @@
         android:layout_marginStart="30dp"
         android:layout_marginEnd="30dp"
         android:background="@color/lightGray" />
-
-    <TextView
-        android:text="Bands"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:layout_gravity="start"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="36dp"
-        android:gravity="start"
-        android:textAppearance="@style/TextAppearance.AppCompat.Title"/>
-
-    <LinearLayout
-        android:id="@+id/runTimeBands"
-        android:layout_marginTop="20dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
 
 </LinearLayout>

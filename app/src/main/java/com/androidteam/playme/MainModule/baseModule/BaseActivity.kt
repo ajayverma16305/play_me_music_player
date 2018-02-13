@@ -24,6 +24,7 @@ import com.androidteam.playme.Fragments.CurrentSongInfoFragment
 import com.androidteam.playme.Fragments.EqualizerFragment
 import com.androidteam.playme.HelperModule.*
 import com.androidteam.playme.Listeners.OnAudioResourcesReadyListener
+import com.androidteam.playme.Listeners.OnMediaStateChangeListener
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.MusicProvider.MediaPlayerService
@@ -42,7 +43,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         MaterialSearchView.OnQueryTextListener, MaterialSearchView.SearchViewListener,
         SeekBar.OnSeekBarChangeListener, MediaPlayerService.OnAudioChangedListener,
         MusicAdapter.OnShuffleIconClickListener, MediaPlayerService.OnNotificationChangeListener,OnAudioPickedListener ,
-        MediaPlayerService.OnMediaPlayerErrorListener{
+        MediaPlayerService.OnMediaPlayerErrorListener , OnMediaStateChangeListener{
 
     private lateinit var sheetBehavior: BottomSheetBehavior<*>
     private var playerService: MediaPlayerService? = null
@@ -57,6 +58,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     private val utils: TimeUtilities = TimeUtilities()
     private var weakSelf: WeakReference<BaseActivity> = WeakReference(this)
     private var musicAdapter : MusicAdapter? = null
+    private var mMiniEqualizer : MiniEqualizer? = null
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +86,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     private fun startFetchingAudioFilesFromStorage() {
         music_recycler_view.visibility = View.VISIBLE
         card_view.visibility = View.VISIBLE
+
+        if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
+            UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
+        }
 
         //Store Serializable audioList to SharedPreferences
         storage = StorageUtil(applicationContext)
@@ -172,6 +178,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         musicAdapter = MusicAdapter(this, audioList)
         music_recycler_view.adapter = musicAdapter
         musicAdapter!!.setSongClickedListener(this)
+        musicAdapter!!.setOnMediaStateChangeListener(this)
         musicAdapter!!.setOnShuffleIconClickListener(this)
         fastscroll.setRecyclerView(music_recycler_view)
 
@@ -566,7 +573,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 BottomSheetBehavior.from(bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED);
             }
             R.id.playOnHomeIcon -> {
-                playHomeIconAction(view)
+                detailPlayAction(view)
             }
             R.id.nextIcon -> {
                 nextIconAction()
@@ -664,7 +671,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
+    /*@TargetApi(Build.VERSION_CODES.O)
     private fun playHomeIconAction(view: View) {
 
         val self = weakSelf.get()
@@ -679,6 +686,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
                         playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
+
+                        mediaStateChangeAction(PlaybackStatus.PLAYING)
                     }
                     PlayMeConstants.PAUSE -> {
                         self.playOnHomeIcon.setImageResource(R.drawable.play_main)
@@ -686,6 +695,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playButton.tag = PlayMeConstants.PLAYING
                         self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
                         playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
+
+                        mediaStateChangeAction(PlaybackStatus.PAUSED)
                     }
                     else -> {
                         self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
@@ -701,17 +712,22 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         } else {
                             playerService?.startPlayingMusic()
                         }
+
+                        mediaStateChangeAction(PlaybackStatus.PLAYING)
                     }
                 }
                 updateProgressBar()
                 updateEqualizerView()
             }
         }
-    }
+    }*/
 
+    // Update Equalizer View
     private fun updateEqualizerView(){
         Handler().postDelayed(Runnable {
-            musicAdapter!!.updatePositionForEqualizer(storage!!.loadAudioIndex())
+            val index = storage!!.loadAudioIndex()
+            val itemHolder =  music_recycler_view.findViewHolderForLayoutPosition(index)
+            musicAdapter!!.updatePositionForEqualizer(index,itemHolder)
         },200)
     }
 
@@ -730,6 +746,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
                         playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
+                        self.mediaStateChangeAction(PlaybackStatus.PLAYING)
                     }
                     PlayMeConstants.PAUSE -> {
                         self.playOnHomeIcon.setImageResource(R.drawable.play_main)
@@ -737,6 +754,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playButton.tag = PlayMeConstants.PAUSE
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
                         playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
+                        self.mediaStateChangeAction(PlaybackStatus.PAUSED)
                     }
                     else -> {
                         self.playButton.setImageResource(R.drawable.pause_main)
@@ -752,10 +770,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         } else {
                             playerService?.startPlayingMusic()
                         }
+                        self.mediaStateChangeAction(PlaybackStatus.PLAYING)
                     }
                 }
-                updateProgressBar()
-                updateEqualizerView()
+                self.updateProgressBar()
+                self.updateEqualizerView()
             }
         }
     }
@@ -794,6 +813,20 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         Timber.d("log")
     }
 
+    override fun mediaStateChanged(view: MiniEqualizer) {
+        mMiniEqualizer = view
+    }
+
+    private fun mediaStateChangeAction(status: PlaybackStatus){
+        if(null != mMiniEqualizer){
+            if(status == PlaybackStatus.PLAYING){
+                mMiniEqualizer!!.animateBars()
+            } else {
+                mMiniEqualizer!!.stopBars()
+            }
+        }
+    }
+
     // Close Action
     private fun closeAction() {
         val self = weakSelf.get()
@@ -825,13 +858,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
         super.onPause()
-    }
-
-    override fun onResume() {
-        if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
-            UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
-        }
-        super.onResume()
     }
 
     override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
@@ -918,7 +944,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     if (BottomSheetBehavior.from(self.bottomSheet).state == (BottomSheetBehavior.STATE_EXPANDED)) {
                         BottomSheetBehavior.from(self.bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED;
                     } else {
-                        super.onBackPressed()
+                       // super.onBackPressed()
                     }
                 }
             }
