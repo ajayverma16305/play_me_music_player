@@ -34,14 +34,6 @@
                 android:tint="@color/colorPrimary"
                 tools:src="@drawable/ic_music_note_black_24dp" />
 
-            <com.androidteam.playme.HelperModule.MiniEqualizer
-                android:id="@+id/equalizer_view"
-                android:gravity="center"
-                android:visibility="gone"
-                android:layout_centerInParent="true"
-                android:layout_width="20dp"
-                android:layout_height="20dp"/>
-
         </RelativeLayout>
 
         <LinearLayout

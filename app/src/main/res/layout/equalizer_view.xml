@@ -30,4 +30,20 @@
         android:layout_margin="1dp"
         android:layout_weight="1" />
 
+    <View
+        android:id="@+id/music_bar4"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:layout_margin="1dp"
+        android:layout_weight="1" />
+
+    <View
+        android:id="@+id/music_bar5"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:layout_margin="1dp"
+        android:layout_weight="1" />
+
 </LinearLayout>

@@ -541,7 +541,9 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                             if (ongoingCall) {
                                 ongoingCall = false
                                 resumeMedia()
-                                updateIconOnMainUI(PlaybackStatus.PLAYING)
+                                if(mediaPlayer!!.isPlaying){
+                                    updateIconOnMainUI(PlaybackStatus.PLAYING)
+                                }
                             }
                         }
                 }
@@ -564,7 +566,9 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 }
                 else if (!mediaPlayer!!.isPlaying) mediaPlayer!!.start()
                 mediaPlayer!!.setVolume(1.0f, 1.0f)
-                updateIconOnMainUI(PlaybackStatus.PLAYING)
+                if(!mediaPlayer!!.isPlaying){
+                    updateIconOnMainUI(PlaybackStatus.PLAYING)
+                }
             }
             AudioManager.AUDIOFOCUS_LOSS -> {
                 // Lost focus for an unbounded amount of time: stop playback and release media player
@@ -667,7 +671,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setContentTitle(activeAudio!!.title)
                     .setContentText(activeAudio!!.artist)
                     .setLargeIcon(largeIcon)
-                    .setSmallIcon(R.drawable.not_app_icon)
+                    .setSmallIcon(R.drawable.ic_music_note_black_24dp)
                     .setStyle(android.support.v7.app.NotificationCompat.MediaStyle()
                             .setShowActionsInCompactView(0, 1, 2)
                             .setMediaSession(mediaSession!!.sessionToken))

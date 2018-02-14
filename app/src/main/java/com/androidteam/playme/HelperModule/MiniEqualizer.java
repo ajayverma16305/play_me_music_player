@@ -22,6 +22,8 @@ public class MiniEqualizer extends LinearLayout {
     View musicBar1;
     View musicBar2;
     View musicBar3;
+    View musicBar4;
+    View musicBar5;
 
     AnimatorSet playingSet;
     AnimatorSet stopSet;
@@ -53,9 +55,13 @@ public class MiniEqualizer extends LinearLayout {
         musicBar1 = findViewById(R.id.music_bar1);
         musicBar2 = findViewById(R.id.music_bar2);
         musicBar3 = findViewById(R.id.music_bar3);
+        musicBar4 = findViewById(R.id.music_bar4);
+        musicBar5 = findViewById(R.id.music_bar5);
         musicBar1.setBackgroundColor(foregroundColor);
         musicBar2.setBackgroundColor(foregroundColor);
         musicBar3.setBackgroundColor(foregroundColor);
+        musicBar4.setBackgroundColor(foregroundColor);
+        musicBar5.setBackgroundColor(foregroundColor);
         setPivots();
     }
 
@@ -93,6 +99,28 @@ public class MiniEqualizer extends LinearLayout {
                 }
             }
         });
+        musicBar4.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (musicBar4.getHeight() > 0) {
+                    musicBar4.setPivotY(musicBar4.getHeight());
+                    if (Build.VERSION.SDK_INT >= 21) {
+                        musicBar4.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    }
+                }
+            }
+        });
+        musicBar5.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (musicBar5.getHeight() > 0) {
+                    musicBar5.setPivotY(musicBar5.getHeight());
+                    if (Build.VERSION.SDK_INT >= 21) {
+                        musicBar5.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    }
+                }
+            }
+        });
     }
 
     public void animateBars() {
@@ -104,9 +132,13 @@ public class MiniEqualizer extends LinearLayout {
             scaleYbar2.setRepeatCount(ValueAnimator.INFINITE);
             ObjectAnimator scaleYbar3 = ObjectAnimator.ofFloat(musicBar3, "scaleY", 0.6f, 0.5f, 1.0f, 0.6f, 0.5f, 1.0f, 0.6f, 0.5f, 1.0f, 0.5f, 0.6f, 0.7f, 0.2f, 0.3f, 0.1f, 0.5f, 0.4f, 0.6f, 0.7f, 0.1f, 0.4f, 0.3f, 0.1f, 0.4f, 0.3f, 0.7f);
             scaleYbar3.setRepeatCount(ValueAnimator.INFINITE);
+            ObjectAnimator scaleYbar4 = ObjectAnimator.ofFloat(musicBar4, "scaleY", 0.6f, 0.5f, 1.0f, 0.6f, 0.5f, 1.0f, 0.6f, 0.5f, 1.0f, 0.5f, 0.6f, 0.7f, 0.2f, 0.3f, 0.1f, 0.5f, 0.4f, 0.6f, 0.7f, 0.1f, 0.4f, 0.3f, 0.1f, 0.4f, 0.3f, 0.7f);
+            scaleYbar4.setRepeatCount(ValueAnimator.INFINITE);
+            ObjectAnimator scaleYbar5 = ObjectAnimator.ofFloat(musicBar5, "scaleY", 0.6f, 0.5f, 1.0f, 0.6f, 0.5f, 1.0f, 0.6f, 0.5f, 1.0f, 0.5f, 0.6f, 0.7f, 0.2f, 0.3f, 0.1f, 0.5f, 0.4f, 0.6f, 0.7f, 0.1f, 0.4f, 0.3f, 0.1f, 0.4f, 0.3f, 0.7f);
+            scaleYbar5.setRepeatCount(ValueAnimator.INFINITE);
 
             playingSet = new AnimatorSet();
-            playingSet.playTogether(scaleYbar2, scaleYbar3, scaleYbar1);
+            playingSet.playTogether(scaleYbar2,scaleYbar4, scaleYbar3, scaleYbar5, scaleYbar1);
             playingSet.setDuration(duration);
             playingSet.setInterpolator(new LinearInterpolator());
             playingSet.start();
@@ -138,8 +170,10 @@ public class MiniEqualizer extends LinearLayout {
             ObjectAnimator scaleY1 = ObjectAnimator.ofFloat(musicBar1, "scaleY", 0.1f);
             ObjectAnimator scaleY2 = ObjectAnimator.ofFloat(musicBar2, "scaleY", 0.1f);
             ObjectAnimator scaleY3 = ObjectAnimator.ofFloat(musicBar3, "scaleY", 0.1f);
+            ObjectAnimator scaleY4 = ObjectAnimator.ofFloat(musicBar4, "scaleY", 0.1f);
+            ObjectAnimator scaleY5 = ObjectAnimator.ofFloat(musicBar5, "scaleY", 0.1f);
             stopSet = new AnimatorSet();
-            stopSet.playTogether(scaleY3, scaleY2, scaleY1);
+            stopSet.playTogether(scaleY3,scaleY4, scaleY2, scaleY1,scaleY5);
             stopSet.setDuration(200);
             stopSet.start();
         } else if (!stopSet.isStarted()) {

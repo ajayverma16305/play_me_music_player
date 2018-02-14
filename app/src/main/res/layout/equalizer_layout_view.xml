@@ -63,7 +63,7 @@
 
         <TextView
             android:layout_weight="1"
-            android:text="Preset"
+            android:text="Sound Effect"
             android:layout_marginStart="24dp"
             android:textAllCaps="false"
             android:layout_width="wrap_content"
@@ -84,23 +84,30 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/runTimeBands"
+        android:id="@+id/equalizerContentLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_marginTop="36dp"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_marginBottom="24dp"
+        android:orientation="vertical">
 
-    <Spinner
-        android:popupBackground="@color/colorPrimary"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="16dp"
-        android:id="@+id/presetSpinner"
-        android:layout_width="match_parent"
-        style="@style/spinnerItemStyle"
-        android:layout_height="40dp"/>
+        <LinearLayout
+            android:layout_marginTop="36dp"
+            android:id="@+id/runTimeBands"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Spinner
+            android:popupBackground="@color/colorPrimary"
+            android:layout_marginTop="36dp"
+            android:id="@+id/presetSpinner"
+            android:layout_width="match_parent"
+            style="@style/spinnerItemStyle"
+            android:layout_height="40dp"/>
+    </LinearLayout>
 
     <View
         android:layout_marginTop="0dp"

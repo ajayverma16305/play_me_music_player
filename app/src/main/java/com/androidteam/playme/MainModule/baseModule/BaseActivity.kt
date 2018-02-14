@@ -1,7 +1,7 @@
 package com.androidteam.playme.MainModule.baseModule
 
 import android.annotation.TargetApi
-import android.content.Intent
+import android.content.*
 import android.support.annotation.RequiresApi
 import android.support.v7.app.AppCompatActivity
 import com.androidteam.playme.Listeners.OnAudioPickedListener
@@ -10,12 +10,12 @@ import kotlinx.android.synthetic.main.activity_base.*
 import com.miguelcatalan.materialsearchview.MaterialSearchView
 import android.support.design.widget.BottomSheetBehavior
 import kotlinx.android.synthetic.main.persistent_bottomsheet.*
-import android.content.ComponentName
-import android.content.Context
-import android.content.ServiceConnection
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.net.Uri
 import android.os.*
 import android.support.v4.content.ContextCompat
+import android.support.v7.app.AlertDialog
 import android.support.v7.widget.LinearLayoutManager
 import android.view.*
 import android.view.inputmethod.InputMethodManager
@@ -24,12 +24,12 @@ import com.androidteam.playme.Fragments.CurrentSongInfoFragment
 import com.androidteam.playme.Fragments.EqualizerFragment
 import com.androidteam.playme.HelperModule.*
 import com.androidteam.playme.Listeners.OnAudioResourcesReadyListener
-import com.androidteam.playme.Listeners.OnMediaStateChangeListener
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.MusicProvider.MediaPlayerService
 import com.androidteam.playme.MusicProvider.MusicContentProvider
 import com.androidteam.playme.SplashModule.LaunchScreenActivity
+import com.balysv.materialripple.MaterialRippleLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.GlideDrawable
 import com.bumptech.glide.request.RequestListener
@@ -43,7 +43,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         MaterialSearchView.OnQueryTextListener, MaterialSearchView.SearchViewListener,
         SeekBar.OnSeekBarChangeListener, MediaPlayerService.OnAudioChangedListener,
         MusicAdapter.OnShuffleIconClickListener, MediaPlayerService.OnNotificationChangeListener,OnAudioPickedListener ,
-        MediaPlayerService.OnMediaPlayerErrorListener , OnMediaStateChangeListener{
+        MediaPlayerService.OnMediaPlayerErrorListener{
 
     private lateinit var sheetBehavior: BottomSheetBehavior<*>
     private var playerService: MediaPlayerService? = null
@@ -58,14 +58,16 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     private val utils: TimeUtilities = TimeUtilities()
     private var weakSelf: WeakReference<BaseActivity> = WeakReference(this)
     private var musicAdapter : MusicAdapter? = null
-    private var mMiniEqualizer : MiniEqualizer? = null
 
-    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_base)
         setSupportActionBar(toolbar)
         supportActionBar?.title = getString(R.string.app_name_title)
+
+        toolbar.setNavigationOnClickListener({
+            toolbarNavigationAction()
+        })
 
         val self = weakSelf.get()
         if (null != self) {
@@ -80,6 +82,45 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         } else {
             setErrorViewForNoAudio()
         }
+    }
+
+    // Toolbar Navigation Action
+    private fun toolbarNavigationAction() {
+        val audioBuilder = AlertDialog.Builder(this)
+        val inflater = this.layoutInflater
+        val dialogView = inflater.inflate(R.layout.app_info_view, null)
+        audioBuilder.setView(dialogView)
+        val alertDialog = audioBuilder.create()
+        alertDialog.show()
+
+        val versionNumberTextView = dialogView.findViewById<TextView>(R.id.versionNumber)
+        versionNumberTextView.text = "App Version : " + getAppVersion()
+
+        val rateButton = dialogView.findViewById<Button>(R.id.rateButton)
+        val rateLaterButton = dialogView.findViewById<Button>(R.id.rateLaterButton)
+
+        rateLaterButton.setOnClickListener {
+            alertDialog.dismiss()
+            Toast.makeText(applicationContext,"Thanks for your feedback",Toast.LENGTH_SHORT).show()
+        }
+
+        rateButton.setOnClickListener {
+            alertDialog.dismiss()
+            val appPackageName = packageName // getPackageName() from Context or Activity object
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)))
+            } catch (anfe: ActivityNotFoundException) {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)))
+            }
+        }
+    }
+
+    // Version number
+    private fun getAppVersion() : String{
+        val pInfo = packageManager.getPackageInfo(packageName, 0);
+        val versionNumber = pInfo!!.versionCode
+        val versionName = pInfo!!.versionName
+        return versionName
     }
 
     // Start Fetching Audio Files From Storage
@@ -178,7 +219,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         musicAdapter = MusicAdapter(this, audioList)
         music_recycler_view.adapter = musicAdapter
         musicAdapter!!.setSongClickedListener(this)
-        musicAdapter!!.setOnMediaStateChangeListener(this)
         musicAdapter!!.setOnShuffleIconClickListener(this)
         fastscroll.setRecyclerView(music_recycler_view)
 
@@ -276,7 +316,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             }
 
             if(audioIndex <= audioList.size ){
-                music_recycler_view.smoothScrollToPosition(audioIndex)
+                music_recycler_view.scrollToPosition(audioIndex)
             }
 
             self.setCurrentFileIndex()
@@ -369,6 +409,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
     override fun onAudioStateChange(status: PlaybackStatus) {
         updateOnScreenIcons(status)
+        mediaStateChangeAction(status)
     }
 
     override fun audioPicked(activeMusic: MusicContent, position: Int) {
@@ -389,7 +430,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
 
         if (null != self) {
-            self.updateEqualizerView()
+            self.mediaStateChangeAction(PlaybackStatus.PLAYING)
             self.setCurrentFileIndex()
             self.playingSongName.text = (musicContentObj?.title)
             self.artistName.text = (musicContentObj?.artist)
@@ -513,6 +554,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         //Store Serializable audioList to SharedPreferences
         storage?.storeAudioIndex(audioIndex)
+        mediaStateChangeAction(PlaybackStatus.PLAYING)
 
         //Check is service is active
         if (!serviceBound) {
@@ -671,66 +713,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
-    /*@TargetApi(Build.VERSION_CODES.O)
-    private fun playHomeIconAction(view: View) {
-
-        val self = weakSelf.get()
-        if (null != self) {
-            val musicPlayer = playerService?.mediaPlayer
-            if (null != musicPlayer) {
-                val tag = view.tag
-                when (tag) {
-                    PlayMeConstants.PLAYING -> {
-                        self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                        self.playButton.setImageResource(R.drawable.pause)
-                        self.playButton.tag = PlayMeConstants.PAUSE
-                        self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
-
-                        mediaStateChangeAction(PlaybackStatus.PLAYING)
-                    }
-                    PlayMeConstants.PAUSE -> {
-                        self.playOnHomeIcon.setImageResource(R.drawable.play_main)
-                        self.playButton.setImageResource(R.drawable.play_big)
-                        self.playButton.tag = PlayMeConstants.PLAYING
-                        self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
-                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
-
-                        mediaStateChangeAction(PlaybackStatus.PAUSED)
-                    }
-                    else -> {
-                        self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
-                        self.playButton.setImageResource(R.drawable.pause)
-                        self.playButton.tag = PlayMeConstants.PAUSE
-                        self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
-                        storage?.storeAvailable(false)
-                        playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
-
-                        if (storage?.loadAudioSeekPosition() != 0) {
-                            playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
-                            playerService?.resumeMediaPlayerWhereUserLeft()
-                        } else {
-                            playerService?.startPlayingMusic()
-                        }
-
-                        mediaStateChangeAction(PlaybackStatus.PLAYING)
-                    }
-                }
-                updateProgressBar()
-                updateEqualizerView()
-            }
-        }
-    }*/
-
-    // Update Equalizer View
-    private fun updateEqualizerView(){
-        Handler().postDelayed(Runnable {
-            val index = storage!!.loadAudioIndex()
-            val itemHolder =  music_recycler_view.findViewHolderForLayoutPosition(index)
-            musicAdapter!!.updatePositionForEqualizer(index,itemHolder)
-        },200)
-    }
-
     @TargetApi(Build.VERSION_CODES.O)
     private fun detailPlayAction(view: View) {
         val self = weakSelf.get()
@@ -774,7 +756,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     }
                 }
                 self.updateProgressBar()
-                self.updateEqualizerView()
             }
         }
     }
@@ -813,17 +794,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         Timber.d("log")
     }
 
-    override fun mediaStateChanged(view: MiniEqualizer) {
-        mMiniEqualizer = view
-    }
-
     private fun mediaStateChangeAction(status: PlaybackStatus){
-        if(null != mMiniEqualizer){
-            if(status == PlaybackStatus.PLAYING){
-                mMiniEqualizer!!.animateBars()
-            } else {
-                mMiniEqualizer!!.stopBars()
-            }
+        if(status == PlaybackStatus.PLAYING){
+            equalizerView.animateBars()
+        } else {
+            equalizerView.stopBars()
         }
     }
 
@@ -944,11 +919,27 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     if (BottomSheetBehavior.from(self.bottomSheet).state == (BottomSheetBehavior.STATE_EXPANDED)) {
                         BottomSheetBehavior.from(self.bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED;
                     } else {
-                       // super.onBackPressed()
+                        actionOnBackpressedToGoAndroidHome()
                     }
                 }
             }
         }
+    }
+
+    // Action OnBackpressed To Go Android Home
+    private fun actionOnBackpressedToGoAndroidHome(){
+        val a = Intent(Intent.ACTION_MAIN)
+        a.addCategory(Intent.CATEGORY_HOME)
+        a.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(a)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if(keyCode == KeyEvent.KEYCODE_BACK){
+            onBackPressed()
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {

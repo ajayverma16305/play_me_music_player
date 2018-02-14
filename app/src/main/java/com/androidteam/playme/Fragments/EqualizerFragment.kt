@@ -149,6 +149,7 @@ class EqualizerFragment : Fragment() ,AdapterView.OnItemSelectedListener {
     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         (view as TextView).setTextColor(ContextCompat.getColor(activity.applicationContext,R.color.white))
 
+        presetSelectedItemPosition = position
         mEqualizer!!.usePreset(position.toShort())
 
         val numberFrequencyBand = mEqualizer!!.numberOfBands - 1
@@ -160,7 +161,6 @@ class EqualizerFragment : Fragment() ,AdapterView.OnItemSelectedListener {
             val seekBar = seekBarDynamicLayout.findViewById<SeekBar>(equalizerBandIndex.toInt())
             seekBar.progress = (mEqualizer!!.getBandLevel((equalizerBandIndex - lowerEqualizerBandLevel).toShort()).toInt())
         }
-
     }
 
     fun setMediaPlayer(mediaPlayer : MediaPlayer){
