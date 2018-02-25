@@ -45,8 +45,8 @@
 
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/picOnFrontView"
-                android:layout_width="@dimen/cover_size_mini"
-                android:layout_height="@dimen/cover_size_mini"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:scaleType="centerCrop"
                 android:tint="@color/yellow"
                 android:layout_gravity="center_vertical"
@@ -123,7 +123,7 @@
         android:id="@+id/albumBackgroundView"
         android:scaleType="centerCrop"
         android:adjustViewBounds="true"
-        android:src="@drawable/b2"
+        android:src="@drawable/b1"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
@@ -142,7 +142,7 @@
         android:orientation="vertical">
 
         <LinearLayout
-            android:layout_marginTop="0dp"
+            android:layout_marginTop="4dp"
             android:id="@+id/closeLayout"
             android:orientation="horizontal"
             android:weightSum="2"
@@ -173,6 +173,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:gravity="start"
+                    android:textColor="@color/white"
                     android:singleLine="true"
                     android:layout_marginEnd="12dp"
                     android:ellipsize="marquee"
@@ -182,6 +183,7 @@
                     android:textAppearance="@style/TextAppearance.AppCompat.Title"/>
 
                 <TextView
+                    android:textColor="@color/white"
                     android:id="@+id/closeArtistName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -305,7 +307,7 @@
                             android:max="100"
                             android:thumbTint="@color/black"
                             android:backgroundTint="@color/fab"
-                            android:progressTint="@color/ThemeLightColor"/>
+                            android:progressTint="@color/colorPrimary"/>
 
                         <LinearLayout
                             android:layout_marginTop="12dp"

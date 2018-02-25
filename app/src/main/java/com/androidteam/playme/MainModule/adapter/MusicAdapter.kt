@@ -53,11 +53,11 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
 
         Glide.with(context)
                 .load(songObject.cover)
-                .error(R.drawable.playme_app_logo)
+                .error(R.drawable.ic_music_note_white_24dp)
                 .override(100,100)
                 .listener(object : RequestListener<String, GlideDrawable>{
                     override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                        itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
+                        itemHolder.mCoverView.setImageResource(R.drawable.ic_music_note_white_24dp)
                         return true
                     }
 

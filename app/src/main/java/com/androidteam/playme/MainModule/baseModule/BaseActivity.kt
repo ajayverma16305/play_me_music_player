@@ -11,7 +11,6 @@ import com.miguelcatalan.materialsearchview.MaterialSearchView
 import android.support.design.widget.BottomSheetBehavior
 import kotlinx.android.synthetic.main.persistent_bottomsheet.*
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.net.Uri
 import android.os.*
 import android.support.v4.content.ContextCompat
@@ -21,7 +20,6 @@ import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import com.androidteam.playme.Fragments.CurrentSongInfoFragment
-import com.androidteam.playme.Fragments.EqualizerFragment
 import com.androidteam.playme.HelperModule.*
 import com.androidteam.playme.Listeners.OnAudioResourcesReadyListener
 import com.androidteam.playme.MainModule.adapter.MusicAdapter
@@ -216,6 +214,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             self.playingSongName.isSelected = true
             self.closeArtistName.isSelected = true
             self.closeSongName.isSelected = true
+            self.header_playingSongName.isSelected = true
+            self.header_artistName.isSelected = true
         }
 
         musicAdapter = MusicAdapter(this, audioList)
@@ -351,11 +351,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.playme_app_logo)
+                    .error(R.drawable.ic_music_note_white_24dp)
                     .override(100, 100)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
+                            self.picOnFrontView.setImageResource(R.drawable.ic_music_note_white_24dp)
                             return true
                         }
 
@@ -452,11 +452,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.playme_app_logo)
+                    .error(R.drawable.ic_music_note_white_24dp)
                     .override(100, 100)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
+                            self.picOnFrontView.setImageResource(R.drawable.ic_music_note_white_24dp)
                             return true
                         }
 
@@ -543,11 +543,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.playme_app_logo)
+                    .error(R.drawable.ic_music_note_white_24dp)
                     .override(100, 100)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.currentPlayingCoverImage.setImageResource(R.drawable.placeholder)
+                            self.currentPlayingCoverImage.setImageResource(R.drawable.ic_music_note_white_24dp)
                             return true
                         }
 

@@ -43,7 +43,7 @@ class UtilityApp {
             TapTargetView.showFor(context as Activity, // `this` is an Activity
                     TapTarget.forView(view, PlayMeConstants.PLAY_MUSIC_STR, PlayMeConstants.PLAY_MUSIC_DESC)
                             // All options below are optional
-                            .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
+                            .outerCircleColor(R.color.TextRedColor)      // Specify a color for the outer circle
                             .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
                             .targetCircleColor(R.color.white)   // Specify a color for the target circle
                             .titleTextSize(20)                  // Specify the size (in sp) of the title text
@@ -52,7 +52,7 @@ class UtilityApp {
                             .descriptionTextColor(R.color.white)  // Specify the color of the description text
                             .textColor(R.color.white)            // Specify a color for both the title and description text
                             .textTypeface(Typeface.SANS_SERIF)  // Specify a typeface for the text
-                            .dimColor(R.color.colorPrimary)            // If set, will dim behind the view with 30% opacity of the given color
+                            .dimColor(R.color.mainColor)            // If set, will dim behind the view with 30% opacity of the given color
                             .drawShadow(true)                   // Whether to draw a drop shadow or not
                             .cancelable(true)                  // Whether tapping outside the outer circle dismisses the view
                             .tintTarget(true)                   // Whether to tint the target view's color
@@ -80,7 +80,7 @@ class UtilityApp {
             TapTargetView.showFor(context as Activity,
                     TapTarget.forToolbarMenuItem(toolbar,menuId, PlayMeConstants.SEARCH_MUSIC_STR, PlayMeConstants.SEARCH_MUSIC_DESC)
                             // All options below are optional
-                            .outerCircleColor(R.color.colorPrimary)      // Specify a color for the outer circle
+                            .outerCircleColor(R.color.TextRedColor)      // Specify a color for the outer circle
                             .outerCircleAlpha(0.96f)            // Specify the alpha amount for the outer circle
                             .targetCircleColor(R.color.white)   // Specify a color for the target circle
                             .titleTextSize(20)                  // Specify the size (in sp) of the title text
@@ -89,7 +89,7 @@ class UtilityApp {
                             .descriptionTextColor(R.color.white)  // Specify the color of the description text
                             .textColor(R.color.white)            // Specify a color for both the title and description text
                             .textTypeface(Typeface.SANS_SERIF)  // Specify a typeface for the text
-                            .dimColor(R.color.colorPrimary)            // If set, will dim behind the view with 30% opacity of the given color
+                            .dimColor(R.color.mainColor)            // If set, will dim behind the view with 30% opacity of the given color
                             .drawShadow(true)                   // Whether to draw a drop shadow or not
                             .cancelable(true)                  // Whether tapping outside the outer circle dismisses the view
                             .tintTarget(true)                   // Whether to tint the target view's color

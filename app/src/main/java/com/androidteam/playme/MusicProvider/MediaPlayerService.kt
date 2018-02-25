@@ -675,7 +675,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setStyle(android.support.v7.app.NotificationCompat.MediaStyle()
                             .setShowActionsInCompactView(0, 1, 2)
                             .setMediaSession(mediaSession!!.sessionToken))
-                    .setColor(resources.getColor(R.color.background))
+                    .setColor(resources.getColor(R.color.mainColor))
                     .addAction(android.R.drawable.ic_media_previous, "previous", playbackAction(3))
                     .addAction(notificationAction, "pause", play_pauseAction)
                     .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2))
