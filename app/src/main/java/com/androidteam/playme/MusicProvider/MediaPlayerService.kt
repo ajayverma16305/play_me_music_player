@@ -681,7 +681,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .addAction(android.R.drawable.ic_media_next, "next", playbackAction(2))
                     .setDeleteIntent(playbackAction(4))
                     .setChannelId(CHANNEL_ID)
-                    .setOngoing(true)
+                    .setOngoing(false)
                     .setOnlyAlertOnce(true)
 
             val contentIntent = PendingIntent.getActivity(this, 0,

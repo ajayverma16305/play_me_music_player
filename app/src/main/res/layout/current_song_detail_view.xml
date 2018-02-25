@@ -67,7 +67,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="180dp"
                     android:adjustViewBounds="true"
-                    android:scaleType="fitCenter"
+                    android:scaleType="centerCrop"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/placeholder"/>
 
                 <TextView
@@ -77,6 +80,9 @@
                     android:layout_alignParentBottom="true"
                     android:textColor="@color/white"
                     android:text="Share"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:layout_alignParentEnd="true"
                     android:textAppearance="@style/TextAppearance.AppCompat.Title"
                     android:layout_width="wrap_content"

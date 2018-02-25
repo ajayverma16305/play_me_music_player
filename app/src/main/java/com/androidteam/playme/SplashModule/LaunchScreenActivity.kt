@@ -67,20 +67,6 @@ class LaunchScreenActivity : AppCompatActivity() {
     }
 
     /**
-     * Async class to get all music list from Storage
-    private class AudioRetrieverAsync(val selfWeak : WeakReference<Context>, private val audioResourceReadyListener
-                    : OnAudioResourcesListReadyListener) : AsyncTask<Void, Void, ArrayList<MusicContent>?>() {
-
-        override fun doInBackground(vararg p0: Void?): ArrayList<MusicContent> {
-            return MusicContentProvider.getAllMusicPathList(selfWeak.get()!!)
-        }
-
-        override fun onPostExecute(result: ArrayList<MusicContent>?) {
-            audioResourceReadyListener.resourcesList(result)
-        }
-    }*/
-
-    /**
      * Show Main Screen
      */
     private fun showMainScreen(musicContentList: ArrayList<MusicContent>?) {

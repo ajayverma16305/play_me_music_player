@@ -29,7 +29,6 @@ import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.MusicProvider.MediaPlayerService
 import com.androidteam.playme.MusicProvider.MusicContentProvider
 import com.androidteam.playme.SplashModule.LaunchScreenActivity
-import com.balysv.materialripple.MaterialRippleLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.GlideDrawable
 import com.bumptech.glide.request.RequestListener
@@ -42,7 +41,7 @@ import kotlin.collections.ArrayList
 class BaseActivity : AppCompatActivity(), View.OnClickListener,
         MaterialSearchView.OnQueryTextListener, MaterialSearchView.SearchViewListener,
         SeekBar.OnSeekBarChangeListener, MediaPlayerService.OnAudioChangedListener,
-        MusicAdapter.OnShuffleIconClickListener, MediaPlayerService.OnNotificationChangeListener,OnAudioPickedListener ,
+        MediaPlayerService.OnNotificationChangeListener,OnAudioPickedListener ,
         MediaPlayerService.OnMediaPlayerErrorListener{
 
     private lateinit var sheetBehavior: BottomSheetBehavior<*>
@@ -118,9 +117,12 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     // Version number
     private fun getAppVersion() : String{
         val pInfo = packageManager.getPackageInfo(packageName, 0);
-        val versionNumber = pInfo!!.versionCode
-        val versionName = pInfo!!.versionName
-        return versionName
+        if(null != pInfo){
+            val versionNumber = pInfo.versionCode
+            val versionName = pInfo.versionName
+            return versionName
+        }
+        return "1.0.1"
     }
 
     // Start Fetching Audio Files From Storage
@@ -219,7 +221,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         musicAdapter = MusicAdapter(this, audioList)
         music_recycler_view.adapter = musicAdapter
         musicAdapter!!.setSongClickedListener(this)
-        musicAdapter!!.setOnShuffleIconClickListener(this)
         fastscroll.setRecyclerView(music_recycler_view)
 
         playLayout.setOnClickListener(this)
@@ -229,9 +230,9 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         previousIcon.setOnClickListener(this)
         repeatIcon.setOnClickListener(this)
         playButton.setOnClickListener(this)
-        shuffle.setOnClickListener(this)
+        shuffleDetail.setOnClickListener(this)
         infoAction.setOnClickListener(this)
-        equalizerAction.setOnClickListener(this)
+        shuffleFab.setOnClickListener(this)
         detailSeekBar.setOnSeekBarChangeListener(this)
 
         search_view.setOnQueryTextListener(this)
@@ -271,13 +272,8 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     closeLayout.visibility = View.GONE
 
                     val fragment = supportFragmentManager.findFragmentByTag("info")
-                    val equalizerFragment = supportFragmentManager.findFragmentByTag("equalizer")
-                    if (fragment != null || null != equalizerFragment) {
-                        if(fragment != null) {
-                            supportFragmentManager.beginTransaction().remove(fragment).commit()
-                        } else if (equalizerFragment != null) {
-                            supportFragmentManager.beginTransaction().remove(equalizerFragment).commit()
-                        }
+                    if (fragment != null ) {
+                        supportFragmentManager.beginTransaction().remove(fragment).commit()
                     }
                 }
             }
@@ -296,9 +292,9 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
         if (null != self) {
             if (storage?.loadAudioShuffledState()!!) {
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
+                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.white))
             } else {
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.lightGray))
+                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.black))
             }
 
             if (storage?.loadAudioIsRepeatOne()!!) {
@@ -321,11 +317,30 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             self.setCurrentFileIndex()
 
+            Glide.with(applicationContext)
+                    .load(musicContentObj?.cover)
+                    .error(R.drawable.playme_app_logo)
+                    .override(100, 100)
+                    .listener(object : RequestListener<String, GlideDrawable> {
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.currentPlayingCoverImage.setImageResource(R.drawable.placeholder)
+                            return true
+                        }
+
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                            Timber.d("Resource Ready")
+                            return false
+                        }
+                    }).into(self.currentPlayingCoverImage)
+
             self.playOnHomeIcon.setImageResource(R.drawable.play_main)
             self.playButton.setImageResource(R.drawable.play_big)
 
             self.playingSongName.text = (musicContentObj?.title)
             self.artistName.text = (musicContentObj?.artist)
+
+            self.header_playingSongName.text = (musicContentObj?.title)
+            self.header_artistName.text = (musicContentObj?.artist)
 
             self.frontSeekBar.progress = (storage!!.loadAudioProgress())
             self.detailSeekBar.progress = (storage!!.loadAudioProgress())
@@ -452,6 +467,25 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     }).into(self.picOnFrontView)
 
             self.playOnHomeIcon.setImageResource(R.drawable.pause_main)
+
+            Glide.with(applicationContext)
+                    .load(musicContentObj?.cover)
+                    .error(R.drawable.playme_app_logo)
+                    .override(100, 100)
+                    .listener(object : RequestListener<String, GlideDrawable> {
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.currentPlayingCoverImage.setImageResource(R.drawable.placeholder)
+                            return true
+                        }
+
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                            Timber.d("Resource Ready")
+                            return false
+                        }
+                    }).into(self.currentPlayingCoverImage)
+
+            self.header_playingSongName.text = (musicContentObj?.title)
+            self.header_artistName.text = (musicContentObj?.artist)
         }
 
         updateProgressBar()
@@ -506,6 +540,25 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             self.startTimer.text = PlayMeConstants.TIMER_ZERO
             self.playingSongName.text = (musicContentObj?.title)
             self.artistName.text = (musicContentObj?.artist)
+
+            Glide.with(applicationContext)
+                    .load(musicContentObj?.cover)
+                    .error(R.drawable.playme_app_logo)
+                    .override(100, 100)
+                    .listener(object : RequestListener<String, GlideDrawable> {
+                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                            self.currentPlayingCoverImage.setImageResource(R.drawable.placeholder)
+                            return true
+                        }
+
+                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                            Timber.d("Resource Ready")
+                            return false
+                        }
+                    }).into(self.currentPlayingCoverImage)
+
+            self.header_playingSongName.text = (musicContentObj?.title)
+            self.header_artistName.text = (musicContentObj?.artist)
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
@@ -626,14 +679,15 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             R.id.repeatIcon -> {
                 repeatAllIconAction()
             }
-            R.id.shuffle -> {
+            R.id.shuffleDetail -> {
                 shuffleIconAction()
             }
             R.id.infoAction -> {
                 showCurrentInfo()
             }
-            R.id.equalizerAction -> {
-                initializeAudioEX()
+            R.id.shuffleFab -> {
+                view.bringToFront()
+                shuffleAction(view)
             }
         }
     }
@@ -650,8 +704,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         transaction.commit()
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
-    override fun shuffleAction(view: View) {
+    private fun shuffleAction(view: View) {
         view.isEnabled = false
 
         audioIndex = playerService?.getRandomAudioFileIndex()!!
@@ -687,10 +740,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         if (null != self) {
             if (storage?.loadAudioShuffledState()!!) {
                 storage?.storeAudioShuffle(false)
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.hintColor))
+                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.black))
             } else {
                 storage?.storeAudioShuffle(true)
-                self.shuffle.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
+                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.white))
             }
         }
     }
@@ -779,19 +832,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
             }
         }
-    }
-
-    private fun initializeAudioEX(){
-        val equalizer = EqualizerFragment()
-
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right,android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-        transaction.add(R.id.infoFrameLayout, equalizer,"equalizer")
-        equalizer.setMediaPlayer(playerService!!.mediaPlayer!!)
-        transaction.addToBackStack("EqualizerFragment")
-        transaction.commit()
-
-        Timber.d("log")
     }
 
     private fun mediaStateChangeAction(status: PlaybackStatus){
@@ -901,16 +941,10 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
         if (null != self) {
             val infoFragment = supportFragmentManager.findFragmentByTag("info")
-            val equalizerFragment = supportFragmentManager.findFragmentByTag("equalizer")
 
-            if (infoFragment != null || null != equalizerFragment) {
+            if (infoFragment != null) {
                 supportFragmentManager.popBackStackImmediate()
-
-                if(infoFragment != null) {
-                    supportFragmentManager.beginTransaction().remove(infoFragment).commit()
-                } else if(equalizerFragment != null){
-                    supportFragmentManager.beginTransaction().remove(equalizerFragment).commit()
-                }
+                supportFragmentManager.beginTransaction().remove(infoFragment).commit()
             }
             else {
                 if (self.search_view.isSearchOpen) {

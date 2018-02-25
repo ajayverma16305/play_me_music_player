@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+<!--
     <color name="colorPrimary">#252a31</color>
+-->
+    <color name="colorPrimary">#464646</color>
     <color name="colorPrimaryDark">#252a31</color>
+    <color name="mainColor">#464646</color>
+<!--
+    <color name="colorPrimaryDark">#252a31</color>
+-->
 
     <color name="colorAccent">#FF4081</color>
     <color name="white">#EFEFEF</color>
@@ -13,6 +20,7 @@
     <color name="ThemeLightColor">#F5BE0E</color>
     <color name="ThemeBGColor">#FFFFFF</color>
     <color name="ThemeBGColor2">#EFEFEF</color>
+    <color name="yellow">#c1d82f</color>
 
     <color name="TextGreenColor">#50AB54</color>
     <color name="TextRedColor">#EB483C</color>

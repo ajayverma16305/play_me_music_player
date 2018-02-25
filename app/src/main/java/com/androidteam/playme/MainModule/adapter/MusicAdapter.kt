@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.androidteam.playme.HelperModule.MiniEqualizer
 import com.androidteam.playme.MusicProvider.MusicContent
 import com.androidteam.playme.Listeners.OnAudioPickedListener
 import com.androidteam.playme.R
@@ -27,17 +26,7 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
         SectionTitleProvider{
 
     private var audioPickedListener: OnAudioPickedListener? = null
-    private val TYPE_HEADER = 0
     private val TYPE_ITEM = 1
-
-    interface OnShuffleIconClickListener{
-        fun shuffleAction(view: View)
-    }
-    var shuffleClickListener : OnShuffleIconClickListener? = null
-
-    fun setOnShuffleIconClickListener(shuffleClickListener : OnShuffleIconClickListener){
-        this.shuffleClickListener = shuffleClickListener
-    }
 
     fun setSongClickedListener(listener: OnAudioPickedListener) {
         audioPickedListener = listener
@@ -55,56 +44,38 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder? {
-         if(viewType == TYPE_HEADER){
-            return  HeaderViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.music_header_view, parent, false))
-        } else {
-             return ItemHolder(LayoutInflater.from(parent.context).inflate(R.layout.list_item_card_small, parent, false))
-        }
+        return ItemHolder(LayoutInflater.from(parent.context).inflate(R.layout.list_item_card_small, parent, false))
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (holder.itemViewType == TYPE_ITEM) {
-            val lPosition = position - 1
-            val songObject = songsList[lPosition]
-            val itemHolder = holder as ItemHolder
+        val songObject = songsList[position]
+        val itemHolder = holder as ItemHolder
 
-            Glide.with(context)
-                    .load(songObject.cover)
-                    .error(R.drawable.playme_app_logo)
-                    .override(100,100)
-                    .listener(object : RequestListener<String, GlideDrawable>{
-                        override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
-                            return true
-                        }
+        Glide.with(context)
+                .load(songObject.cover)
+                .error(R.drawable.playme_app_logo)
+                .override(100,100)
+                .listener(object : RequestListener<String, GlideDrawable>{
+                    override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
+                        itemHolder.mCoverView.setImageResource(R.drawable.playme_app_logo)
+                        return true
+                    }
 
-                        override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
-                            Timber.d("Resource Ready")
-                            return false
-                        }
-                    }).into(itemHolder.mCoverView)
+                    override fun onResourceReady(resource: GlideDrawable?, model: String?, target: Target<GlideDrawable>?, isFromMemoryCache: Boolean, isFirstResource: Boolean): Boolean {
+                        Timber.d("Resource Ready")
+                        return false
+                    }
+                }).into(itemHolder.mCoverView)
 
-            itemHolder.mTitleView.text = songObject.title
-            itemHolder.mArtistView.text = songObject.artist
-            itemHolder.mDurationView.text = songObject.duration
+        itemHolder.mTitleView.text = songObject.title
+        itemHolder.mArtistView.text = songObject.artist
+        itemHolder.mDurationView.text = songObject.duration
 
-            itemHolder.cardView.setOnClickListener {
-                if (null != audioPickedListener) {
-                    audioPickedListener!!.audioPicked(songObject,lPosition)
-                }
-            }
-        } else {
-            val headerView = holder as HeaderViewHolder
-            headerView.mHeaderShuffleTextView.setOnClickListener{
-                if(null != shuffleClickListener){
-                    shuffleClickListener!!.shuffleAction(headerView.mHeaderShuffleTextView)
-                }
+        itemHolder.cardView.setOnClickListener {
+            if (null != audioPickedListener) {
+                audioPickedListener!!.audioPicked(songObject,position)
             }
         }
-    }
-
-    private class HeaderViewHolder(mView : View) : RecyclerView.ViewHolder(mView){
-        val mHeaderShuffleTextView : TextView = mView.findViewById(R.id.shuffle)
     }
 
     private class ItemHolder(mView : View) : RecyclerView.ViewHolder(mView) {
@@ -116,16 +87,12 @@ class MusicAdapter(val context : Context,var songsList: List<MusicContent>) : Re
     }
 
     override fun getItemViewType(position: Int): Int {
-         if(position == 0){
-            return TYPE_HEADER
-        } else {
-             return TYPE_ITEM
-        }
+        return TYPE_ITEM
     }
 
     override fun getItemCount(): Int {
         return if(songsList.isNotEmpty()){
-            (songsList.size + 1)
+            (songsList.size)
         } else{
            0
         }
