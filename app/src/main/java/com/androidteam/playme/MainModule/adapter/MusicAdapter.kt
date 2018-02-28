@@ -116,6 +116,8 @@ class MusicAdapter(val context : Context,var songsList: ArrayList<MusicContent>)
             songObject.isCurrentSong = true
             if (!lastSongPlayedInstance.contains(songObject)) {
                 lastSongPlayedInstance.add(songObject)
+            } else {
+                lastSongPlayedInstance.remove(songObject)
             }
             currentPosition = position;
         }
