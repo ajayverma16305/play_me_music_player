@@ -94,7 +94,6 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:text="Lahore"
                             android:id="@+id/header_playingSongName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -110,7 +109,6 @@
                             android:textAppearance="@style/TextAppearance.AppCompat.Title"/>
 
                         <TextView
-                            android:text="Guru Randhawa"
                             android:id="@+id/header_artistName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

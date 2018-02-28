@@ -10,4 +10,5 @@ class MusicContent (val cover: String,
                     val thisDateAdded : String,
                     val thisDateModified : String,
                     val thiNumberOfTracks : String,
-                    val sizeInMb : String)
+                    val sizeInMb : String,
+                    var isCurrentSong : Boolean)

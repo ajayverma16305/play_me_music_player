@@ -16,6 +16,8 @@ import android.os.*
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -129,6 +131,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         card_view.visibility = View.VISIBLE
 
         if (!UtilityApp.getAppDatabaseValue(this@BaseActivity)) {
+            SystemClock.sleep(2000);
             UtilityApp.startTapTargetViewForPlayIcon(this@BaseActivity, playOnHomeIcon, toolbar, R.id.action_search)
         }
 
@@ -395,6 +398,19 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
+    private fun setCurrentPositionOnAdapterView() {
+        try {
+            val position = storage!!.loadAudioIndex()
+            val holder : RecyclerView.ViewHolder = music_recycler_view.findViewHolderForAdapterPosition(position)
+
+            if (null != holder) {
+                musicAdapter!!.currentPosition(audioIndex, holder)
+            }
+        } catch (e: Exception) {
+            Log.d("TAG:: ","findViewHolder :: " +e)
+        }
+    }
+
     // Binding this Client to the AudioPlayer Service
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
@@ -445,6 +461,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
 
         if (null != self) {
+            self.setCurrentPositionOnAdapterView()
             self.mediaStateChangeAction(PlaybackStatus.PLAYING)
             self.setCurrentFileIndex()
             self.playingSongName.text = (musicContentObj?.title)
@@ -769,7 +786,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     @TargetApi(Build.VERSION_CODES.O)
     private fun detailPlayAction(view: View) {
         val self = weakSelf.get()
-
         if (null != self) {
             val musicPlayer = playerService?.mediaPlayer
             if (null != musicPlayer) {
@@ -782,6 +798,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
                         playerService?.handleIncomingActions(Intent(playerService?.ACTION_PLAY))
                         self.mediaStateChangeAction(PlaybackStatus.PLAYING)
+
                     }
                     PlayMeConstants.PAUSE -> {
                         self.playOnHomeIcon.setImageResource(R.drawable.play_main)
@@ -790,6 +807,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
                         playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
                         self.mediaStateChangeAction(PlaybackStatus.PAUSED)
+
                     }
                     else -> {
                         self.playButton.setImageResource(R.drawable.pause_main)
@@ -812,7 +830,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
     }
-
+    
     /**
      * Update On Screen Icons
      */
@@ -831,6 +849,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 self.playButton.tag = PlayMeConstants.PLAYING
                 self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
             }
+            self.setCurrentPositionOnAdapterView()
         }
     }
 
@@ -953,15 +972,15 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                     if (BottomSheetBehavior.from(self.bottomSheet).state == (BottomSheetBehavior.STATE_EXPANDED)) {
                         BottomSheetBehavior.from(self.bottomSheet).state = BottomSheetBehavior.STATE_COLLAPSED;
                     } else {
-                        actionOnBackpressedToGoAndroidHome()
+                        actionOnBackPressedToGoAndroidHome()
                     }
                 }
             }
         }
     }
 
-    // Action OnBackpressed To Go Android Home
-    private fun actionOnBackpressedToGoAndroidHome(){
+    // Action OnBackPressed To Go Android Home
+    private fun actionOnBackPressedToGoAndroidHome(){
         val a = Intent(Intent.ACTION_MAIN)
         a.addCategory(Intent.CATEGORY_HOME)
         a.flags = Intent.FLAG_ACTIVITY_NEW_TASK
