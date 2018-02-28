@@ -36,8 +36,7 @@ class MusicAdapter(val context : Context,var songsList: ArrayList<MusicContent>)
     private var currentPosition = -1
     private var lastSongPlayedInstance : ArrayList<MusicContent> = ArrayList()
 
-    override fun currentPosition(position: Int, holder: RecyclerView.ViewHolder?) {
-        val itemHolder = holder as ItemHolder
+    override fun currentPosition(position: Int) {
         notifyDataSetWithNewParams(position,songsList[position])
     }
 
@@ -126,7 +125,7 @@ class MusicAdapter(val context : Context,var songsList: ArrayList<MusicContent>)
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder?) {
         val itemHolder = holder as ItemHolder
-        val position =  itemHolder.adapterPosition
+        val position =  itemHolder.layoutPosition
 
         val songObject = songsList[position]
         if (songObject.isCurrentSong) {

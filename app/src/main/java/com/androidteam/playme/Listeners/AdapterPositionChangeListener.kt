@@ -8,5 +8,5 @@ import android.support.v7.widget.RecyclerView
  */
 
 interface AdapterPositionChangeListener {
-    fun currentPosition(position: Int,holder: RecyclerView.ViewHolder?)
+    fun currentPosition(position: Int)
 }

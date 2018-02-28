@@ -401,13 +401,9 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
     private fun setCurrentPositionOnAdapterView() {
         try {
             val position = storage!!.loadAudioIndex()
-            val holder : RecyclerView.ViewHolder = music_recycler_view.findViewHolderForAdapterPosition(position)
-
-            if (null != holder) {
-                musicAdapter!!.currentPosition(audioIndex, holder)
-            }
+            musicAdapter!!.currentPosition(position)
         } catch (e: Exception) {
-            Log.d("TAG:: ","findViewHolder :: " +e)
+            Timber.d("findViewHolder :: " +e)
         }
     }
 
@@ -830,7 +826,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             }
         }
     }
-    
+
     /**
      * Update On Screen Icons
      */
