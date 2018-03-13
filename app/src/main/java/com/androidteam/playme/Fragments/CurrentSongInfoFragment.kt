@@ -45,6 +45,7 @@ class CurrentSongInfoFragment : Fragment() {
                 .load(activeMusicContentInfo?.cover)
                 .error(R.drawable.placeholder)
                 .override(600, 600)
+                .centerCrop()
                 .listener(object : RequestListener<String, GlideDrawable> {
                     override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
                         songInfoCover.setImageResource(R.drawable.placeholder)

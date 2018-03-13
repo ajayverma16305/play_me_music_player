@@ -167,6 +167,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
         try {
             // Set the data source to the mediaFile location
             if (null != activeAudio) {
+                mediaPlayer?.reset()
                 mediaPlayer?.setDataSource(activeAudio!!.data)
                 mediaPlayer?.prepare()
             }
@@ -417,7 +418,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
     }
 
     // Update Meta Data
-    private fun updateMetaData() {
+    fun updateMetaData() {
         if (activeAudio!!.cover.isNotEmpty()) {
 
             Glide.with(this).load(activeAudio!!.cover)

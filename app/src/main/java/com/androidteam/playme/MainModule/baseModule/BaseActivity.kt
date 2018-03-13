@@ -793,7 +793,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                         self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
                         playerService?.handleIncomingActions(Intent(playerService?.ACTION_PAUSE))
                         self.mediaStateChangeAction(PlaybackStatus.PAUSED)
-
                     }
                     else -> {
                         self.playButton.setImageResource(R.drawable.pause_main)
@@ -829,12 +828,22 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 self.playButton.setImageResource(R.drawable.pause)
                 self.playButton.tag = PlayMeConstants.PAUSE
                 self.playOnHomeIcon.tag = PlayMeConstants.PAUSE
+
+                if (storage?.loadAudioSeekPosition() != 0) {
+                    playerService?.resumePosition = storage?.loadAudioSeekPosition()!!.toInt()
+                    playerService?.resumeMediaPlayerWhereUserLeft()
+                } else {
+                    playerService?.startPlayingMusic()
+                }
+                playerService!!.updateMetaData()
+                self.updateProgressBar()
             } else {
                 self.playOnHomeIcon.setImageResource(R.drawable.play_main)
                 self.playButton.setImageResource(R.drawable.play_big)
                 self.playButton.tag = PlayMeConstants.PLAYING
                 self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
             }
+
         }
     }
 
