@@ -297,7 +297,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
             if (storage?.loadAudioShuffledState()!!) {
                 self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.white))
             } else {
-                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.black))
+                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.hintColor))
             }
 
             if (storage?.loadAudioIsRepeatOne()!!) {
@@ -398,15 +398,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         }
     }
 
-    private fun setCurrentPositionOnAdapterView() {
-        try {
-            val position = storage!!.loadAudioIndex()
-            musicAdapter!!.currentPosition(position)
-        } catch (e: Exception) {
-            Timber.d("findViewHolder :: " +e)
-        }
-    }
-
     // Binding this Client to the AudioPlayer Service
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
@@ -457,7 +448,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         val self = weakSelf.get()
 
         if (null != self) {
-            self.setCurrentPositionOnAdapterView()
             self.mediaStateChangeAction(PlaybackStatus.PLAYING)
             self.setCurrentFileIndex()
             self.playingSongName.text = (musicContentObj?.title)
@@ -575,11 +565,11 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
 
             Glide.with(applicationContext)
                     .load(musicContentObj?.cover)
-                    .error(R.drawable.playme_app_logo)
+                    .error(R.drawable.ic_music_note_white_24dp)
                     .override(60, 60)
                     .listener(object : RequestListener<String, GlideDrawable> {
                         override fun onException(e: java.lang.Exception?, model: String?, target: Target<GlideDrawable>?, isFirstResource: Boolean): Boolean {
-                            self.picOnFrontView.setImageResource(R.drawable.playme_app_logo)
+                            self.picOnFrontView.setImageResource(R.drawable.ic_music_note_white_24dp)
                             return true
                         }
 
@@ -753,7 +743,7 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
         if (null != self) {
             if (storage?.loadAudioShuffledState()!!) {
                 storage?.storeAudioShuffle(false)
-                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.black))
+                self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.hintColor))
             } else {
                 storage?.storeAudioShuffle(true)
                 self.shuffleDetail.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(applicationContext, R.color.white))
@@ -845,7 +835,6 @@ class BaseActivity : AppCompatActivity(), View.OnClickListener,
                 self.playButton.tag = PlayMeConstants.PLAYING
                 self.playOnHomeIcon.tag = PlayMeConstants.PLAYING
             }
-            self.setCurrentPositionOnAdapterView()
         }
     }
 

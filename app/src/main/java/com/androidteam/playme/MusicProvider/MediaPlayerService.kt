@@ -661,7 +661,6 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                 val importance = NotificationManager.IMPORTANCE_NONE
                 val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
                 val notificationChannel = NotificationChannel(CHANNEL_ID,name,importance)
-                //notificationChannel.enableLights(true);
                 notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 notificationManager.createNotificationChannel(mChannel);
             }
@@ -671,7 +670,7 @@ class MediaPlayerService : Service(), MediaPlayer.OnCompletionListener, MediaPla
                     .setContentTitle(activeAudio!!.title)
                     .setContentText(activeAudio!!.artist)
                     .setLargeIcon(largeIcon)
-                    .setSmallIcon(R.drawable.ic_music_note_black_24dp)
+                    .setSmallIcon(R.drawable.not_app_icon)
                     .setStyle(android.support.v7.app.NotificationCompat.MediaStyle()
                             .setShowActionsInCompactView(0, 1, 2)
                             .setMediaSession(mediaSession!!.sessionToken))

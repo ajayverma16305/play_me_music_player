@@ -1,16 +1,10 @@
 <resources>
     <string name="app_name">PlayMe</string>
     <string name="app_name_title">PlayMe Player</string>
-
-    <string name="tab_text_5">Share</string>
-    <string name="tab_text_6">Rate App</string>
-    <string name="tab_text_7">About</string>
-    <string name="tab_text_8">Version</string>
     <string name="action_search">Search your song</string>
     <string name="action_search_hint">Search your song</string>
 
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="rate_dialog_title">Rate this app</string>
     <string name="rate_dialog_message">If you enjoy playing this app, would you mind taking a moment to rate it? It won\'t take more than a minute. Thanks for your support!</string>
     <string name="rate_dialog_ok">Rate It Now</string>

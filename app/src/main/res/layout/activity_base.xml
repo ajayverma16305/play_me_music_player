@@ -41,7 +41,7 @@
         <android.support.v7.widget.CardView
             android:id="@+id/cardViewLayout"
             android:layout_width="match_parent"
-            android:layout_height="180dp"
+            android:layout_height="150dp"
             android:elevation="24dp"
             app:cardElevation="16dp"
             app:cardPreventCornerOverlap="true">
@@ -70,20 +70,18 @@
                     android:gravity="center_horizontal"
                     android:layout_width="match_parent"
                     android:paddingEnd="24dp"
-                    android:layout_height="135dp"
+                    android:layout_height="100dp"
                     android:orientation="horizontal"
                     android:weightSum="2">
 
                     <de.hdodenhof.circleimageview.CircleImageView
                         android:layout_width="0dp"
                         android:layout_height="80dp"
-                        app:civ_border_width="1dp"
-                        android:layout_marginStart="4dp"
+                        android:layout_marginStart="2dp"
                         android:layout_weight="0.6"
-                        android:scaleType="centerCrop"
                         android:tint="@color/mainColor"
                         android:layout_gravity="center_vertical"
-                        tools:src="@drawable/placeholder"
+                        tools:src="@drawable/playme_app_logo"
                         android:id="@+id/currentPlayingCoverImage" />
 
                     <LinearLayout

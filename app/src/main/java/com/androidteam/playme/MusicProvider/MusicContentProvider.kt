@@ -84,7 +84,7 @@ class MusicContentProvider(private val selfWeak : WeakReference<Context>,private
 
                 itemList.add(MusicContent(imagePath,
                         thisId, thisTitle, thisArtist, convertDuration(duration),
-                        imageData, thisAlbumName, thisDateAdded, thisDateModified, thiNumberOfTracks!!, sizeInMb,false))
+                        imageData, thisAlbumName, thisDateAdded, thisDateModified, thiNumberOfTracks!!, sizeInMb))
 
                 cursorAlbum?.close()
 

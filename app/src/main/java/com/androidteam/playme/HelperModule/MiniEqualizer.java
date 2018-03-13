@@ -48,7 +48,7 @@ public class MiniEqualizer extends LinearLayout {
     }
 
     private void initViews() {
-        foregroundColor = ContextCompat.getColor(getContext(),R.color.drawerArrowColor);
+        foregroundColor = ContextCompat.getColor(getContext(),R.color.lightGray);
         duration = 3500;
 
         LayoutInflater.from(getContext()).inflate(R.layout.equalizer_view, this, true);
