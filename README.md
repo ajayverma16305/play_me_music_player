@@ -13,6 +13,8 @@
 
 
 ## PlayMe is an open source, local music player for Android.
+See on PlayStore
+https://play.google.com/store/apps/details?id=com.androidteam.playme&hl=en
 
 ## Features
 * Local playback only
